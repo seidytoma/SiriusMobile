@@ -8,6 +8,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SiriusApi } from '../../../src/services/SiriusApi';
+import { stopRinging } from '../../../src/services/ChamadosLogic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -294,6 +295,11 @@ export default function ChamadoDetalhes() {
     }
 
     if (!chamado?.chamado_id || processingAction) return;
+
+    // 1. PARA O BARULHO IMEDIATAMENTE
+    stopRinging(chamado.chamado_id);
+
+    // 2. Trava a UI, mas vamos atualizar visualmente já
     setProcessingAction(true);
 
     const backupChamado = { ...chamado }; 
@@ -304,6 +310,7 @@ export default function ChamadoDetalhes() {
       const dataOtimista = new Date().toISOString();
       const novoStatus = "Em Atendimento";
 
+      // 3. ATUALIZAÇÃO OTIMISTA (Visual Instantâneo)
       setChamado((prev: any) => ({
         ...prev,
         chamado_status: novoStatus,
@@ -538,7 +545,12 @@ export default function ChamadoDetalhes() {
             }}
             disabled={processingAction} // Não desabilita se isButtonLocked, para permitir clicar e ver o alerta
           >
-            {processingAction ? (
+            {/*
+                UX OTIMIZADA: Se estiver processando, mas o status JÁ mudou (Otimista),
+                mostra o botão normal (apenas travado) em vez do Spinner.
+                Isso dá a sensação de "Instantâneo".
+            */}
+            {processingAction && chamado?.chamado_status === 'Aberto' ? (
                <ActivityIndicator color="white" />
             ) : (
                <>
