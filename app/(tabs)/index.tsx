@@ -568,12 +568,21 @@ export default function HomeScreen() {
             <TouchableOpacity 
               style={[styles.btnFilter, { backgroundColor: '#D32F2F', marginRight: 10 }]}
               onPress={() => setLogoutModalVisible(true)} // <--- MUDE PARA ISSO
+              accessibilityLabel="Sair do aplicativo"
+              accessibilityHint="Abre a confirmação para desconectar sua conta"
+              accessibilityRole="button"
             >
               <MaterialIcons name="logout" size={20} color="white" />
             </TouchableOpacity>
 
             {/* 2. BOTÃO FILTRO (Transparente) */}
-            <TouchableOpacity style={styles.btnFilter} onPress={() => setModalVisible(true)}>
+            <TouchableOpacity
+              style={styles.btnFilter}
+              onPress={() => setModalVisible(true)}
+              accessibilityLabel="Filtrar chamados"
+              accessibilityHint="Abre a seleção de setores monitorados"
+              accessibilityRole="button"
+            >
               <MaterialIcons name="filter-list" size={24} color="white" />
             </TouchableOpacity>
         </View>
@@ -644,7 +653,7 @@ export default function HomeScreen() {
         currentSelectedIds={meusSetoresIds}
         cachedSetores={todosSetores} 
         cachedPresets={todosPresets}
-        isLoading={todosSetores.length == 0}
+        isLoading={todosSetores.length === 0}
         onUpdatePresets={(newPresets: any) => {
             setTodosPresets(newPresets);
             AsyncStorage.setItem(CACHE_PRESETS, JSON.stringify(newPresets));
