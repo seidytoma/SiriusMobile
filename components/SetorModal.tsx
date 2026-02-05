@@ -206,7 +206,14 @@ export default function SetorModal({
     }
 
     return (
-      <TouchableOpacity style={cardStyle} onPress={() => toggleSetor(id)} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={cardStyle}
+        onPress={() => toggleSetor(id)}
+        activeOpacity={0.7}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isSelected }}
+        accessibilityLabel={item.cc_descricao}
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle} numberOfLines={1}>{item.cc_descricao}</Text>
           <View style={[styles.checkbox, isSelected && { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}>
@@ -269,7 +276,11 @@ export default function SetorModal({
           
           <View style={styles.header}>
             <Text style={styles.title}>Gerenciar Setores</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity
+              onPress={onClose}
+              accessibilityLabel="Fechar modal de setores"
+              accessibilityRole="button"
+            >
               <MaterialIcons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
