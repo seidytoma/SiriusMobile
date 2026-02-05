@@ -18,6 +18,9 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+google-services.json
+sirius-mobile-ec83e-firebase-adminsdk-fbsvc-bd0f74739b.json
+
 # Metro
 .metro-health-check*
 
@@ -41,3 +44,22 @@ app-example
 # generated native folders
 /ios
 /android
+
+
+.pnpm-store/
+
+# Rust/Tauri build artifacts
+src-tauri/target/
+
+
+
+# IDEs and editors
+.vscode/
+.idea/
+.vs/
+
+# Environment variables
+.env
+.env.*
+
+.easignore
