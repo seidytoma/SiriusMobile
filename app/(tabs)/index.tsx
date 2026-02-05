@@ -166,7 +166,7 @@ export default function HomeScreen() {
 
   // ... (dentro de HomeScreen)
 
-  const handleLoadChamados = async (ids: string[], isSilent = false, force = false, preserveState = false) => {
+  const handleLoadChamados = async (ids: string[], isSilent = false, force = false, preserveState = false, ringingDelay = 0) => {
     
     // [UX] Se for manual, mostra o spinner nativo, mas NÃO limpa a lista (não usamos setLoading(true))
     if (!isSilent) setRefreshing(true);
@@ -203,7 +203,7 @@ export default function HomeScreen() {
       // 2. BUSCA INTELIGENTE (Smart Sync)
       // Tenta buscar no servidor. Se falhar, o 'verificarEscalonamentoGlobal' (que ajustamos antes)
       // já tem a proteção de não apagar o cache local se vier resposta vazia inválida.
-      await verificarEscalonamentoGlobal(force);
+      await verificarEscalonamentoGlobal(force, ringingDelay);
       
       if (isMountedRef.current) setSyncError(false);
 
@@ -384,10 +384,13 @@ export default function HomeScreen() {
 
         // Se deveForcarDownload = false, ele usa o Smart Sync. 
         // Se o servidor ainda tiver a lista velha, o Smart Sync vai ignorar e manter o nosso cache novo.
-        handleLoadChamados(setoresIdsRef.current, true, deveForcarDownload);
+        // [NOVO] ringingDelay = 120 (Soneca de 2 min) para não fazer barulho enquanto o usuário usa o app
+        // [FIX] preserveState = true para evitar que a lista desapareça (pisque) durante o resume
+        handleLoadChamados(setoresIdsRef.current, true, deveForcarDownload, true, 120);
         
       } else if (nextState === 'background') {
-        verificarEscalonamentoGlobal(true);
+        // [NOVO] ringingDelay = 0 (Imediato) para garantir que volte a tocar se não tiver atendido
+        verificarEscalonamentoGlobal(true, 0);
       }
     });
     return () => sub.remove();
