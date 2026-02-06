@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { SiriusApi } from '../../../src/services/SiriusApi';
 import { stopRinging } from '../../../src/services/ChamadosLogic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -414,15 +415,44 @@ export default function ChamadoDetalhes() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{top:15, bottom:15, left:15, right:15}}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{top:15, bottom:15, left:15, right:15}}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          accessibilityHint="Retorna para a lista de chamados"
+        >
           <MaterialIcons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes do Chamado</Text>
       </View>
 
-      <View style={styles.tabContainer}>
-        <TouchableOpacity style={[styles.tabBtn, activeTab === 'detalhes' && styles.tabActive]} onPress={() => setActiveTab('detalhes')}><Text style={[styles.tabText, activeTab === 'detalhes' && styles.tabTextActive]}>DETALHES</Text></TouchableOpacity>
-        <TouchableOpacity style={[styles.tabBtn, activeTab === 'chat' && styles.tabActive]} onPress={() => setActiveTab('chat')}><Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>CHAT ({messages.length})</Text></TouchableOpacity>
+      <View style={styles.tabContainer} accessibilityRole="tablist">
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'detalhes' && styles.tabActive]}
+          onPress={() => {
+            Haptics.selectionAsync();
+            setActiveTab('detalhes');
+          }}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'detalhes' }}
+          accessibilityLabel="Mostrar detalhes do chamado"
+        >
+          <Text style={[styles.tabText, activeTab === 'detalhes' && styles.tabTextActive]}>DETALHES</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'chat' && styles.tabActive]}
+          onPress={() => {
+            Haptics.selectionAsync();
+            setActiveTab('chat');
+          }}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'chat' }}
+          accessibilityLabel={`Mostrar chat do chamado, ${messages.length} mensagens`}
+        >
+          <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>CHAT ({messages.length})</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{flex: 1}}>
@@ -501,7 +531,14 @@ export default function ChamadoDetalhes() {
                 returnKeyType="send"
                 onSubmitEditing={handleSendMessage}
               />
-              <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn}>
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={styles.sendBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Enviar mensagem"
+                accessibilityState={{ disabled: sendingMsg }}
+                disabled={sendingMsg}
+              >
                 {sendingMsg ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
@@ -543,7 +580,13 @@ export default function ChamadoDetalhes() {
                 setModalVisible(true);
               }
             }}
-            disabled={processingAction} // Não desabilita se isButtonLocked, para permitir clicar e ver o alerta
+            disabled={processingAction}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isButtonLocked ? "Ação bloqueada: Em atendimento em outro chamado" :
+              chamado?.chamado_status === 'Aberto' ? "Iniciar Atendimento" : "Finalizar Chamado"
+            }
+            accessibilityState={{ busy: processingAction, disabled: processingAction }}
           >
             {/*
                 UX OTIMIZADA: Se estiver processando, mas o status JÁ mudou (Otimista),
