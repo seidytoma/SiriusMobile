@@ -5,6 +5,7 @@ import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, 
   Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, FlatList 
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SiriusApi } from '../../../src/services/SiriusApi';
@@ -52,6 +53,8 @@ export default function ChamadoDetalhes() {
   const [derivacao, setDerivacao] = useState("Resolvido");
 
   const [processingAction, setProcessingAction] = useState(false);
+  // [UX] Feedback visual imediato ao finalizar
+  const [isFinishing, setIsFinishing] = useState(false);
   
   // [NOVO] Estado para saber se o usuário já está ocupado em outro chamado
   const [userIsBusy, setUserIsBusy] = useState(false);
@@ -290,11 +293,14 @@ export default function ChamadoDetalhes() {
   const handleAtender = async () => {
     // [NOVO] Bloqueia se já estiver ocupado
     if (userIsBusy) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert("Ação Bloqueada", "Você já possui um chamado em andamento. Finalize-o antes de iniciar outro.");
         return;
     }
 
     if (!chamado?.chamado_id || processingAction) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     // 1. PARA O BARULHO IMEDIATAMENTE
     stopRinging(chamado.chamado_id);
@@ -353,10 +359,15 @@ export default function ChamadoDetalhes() {
   };
 
   const handleEncerrar = async () => {
-    if (!laudo.trim() || !chamado?.chamado_id) return Alert.alert("Atenção", "O laudo é obrigatório.");
+    if (!laudo.trim() || !chamado?.chamado_id) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return Alert.alert("Atenção", "O laudo é obrigatório.");
+    }
 
     setModalVisible(false);
+    setIsFinishing(true);
     setProcessingAction(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
       await AsyncStorage.setItem('@Sirius:last_action_timestamp', String(new Date().getTime()));
@@ -367,6 +378,7 @@ export default function ChamadoDetalhes() {
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(novaLista));
       }
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Sucesso", "Chamado finalizado!", [
         { 
           text: "OK", 
@@ -386,6 +398,7 @@ export default function ChamadoDetalhes() {
     } catch (e) {
       Alert.alert("Erro", "Falha ao salvar dados locais.");
     } finally {
+      setIsFinishing(false);
       setProcessingAction(false);
     }
   };
@@ -550,7 +563,12 @@ export default function ChamadoDetalhes() {
                 mostra o botão normal (apenas travado) em vez do Spinner.
                 Isso dá a sensação de "Instantâneo".
             */}
-            {processingAction && chamado?.chamado_status === 'Aberto' ? (
+            {isFinishing ? (
+               <>
+                 <ActivityIndicator color="white" />
+                 <Text style={{color: 'white', fontWeight: 'bold', marginLeft: 10}}>FINALIZANDO...</Text>
+               </>
+            ) : processingAction && chamado?.chamado_status === 'Aberto' ? (
                <ActivityIndicator color="white" />
             ) : (
                <>

@@ -26,9 +26,13 @@ const getRingNotificationId = (chamadoId: string | number, index: number) => `ri
  * sem afetar alertas de escalonamento ou outros chamados.
  */
 export async function stopRinging(chamadoId: string | number) {
-    console.log(`[Logic] Parando campainha para chamado ${chamadoId}...`);
-    for (let i = 0; i < RING_BATCH_COUNT; i++) {
-        await Notifications.cancelScheduledNotificationAsync(getRingNotificationId(chamadoId, i));
+    try {
+        console.log(`[Logic] Parando campainha para chamado ${chamadoId}...`);
+        for (let i = 0; i < RING_BATCH_COUNT; i++) {
+            await Notifications.cancelScheduledNotificationAsync(getRingNotificationId(chamadoId, i));
+        }
+    } catch (e) {
+        console.warn("Erro ao parar campainha:", e);
     }
 }
 
