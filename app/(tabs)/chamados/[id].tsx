@@ -1,12 +1,13 @@
-﻿// app/chamados/[id].tsx
+// app/chamados/[id].tsx
 
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, 
-  Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, FlatList 
+  Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, FlatList, Animated
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { SiriusApi } from '../../../src/services/SiriusApi';
 import { stopRinging } from '../../../src/services/ChamadosLogic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,6 +54,11 @@ export default function ChamadoDetalhes() {
 
   const [processingAction, setProcessingAction] = useState(false);
   
+  // [UX] Success Animation State
+  const [showSuccess, setShowSuccess] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+
   // [NOVO] Estado para saber se o usuário já está ocupado em outro chamado
   const [userIsBusy, setUserIsBusy] = useState(false);
 
@@ -356,7 +362,14 @@ export default function ChamadoDetalhes() {
     if (!laudo.trim() || !chamado?.chamado_id) return Alert.alert("Atenção", "O laudo é obrigatório.");
 
     setModalVisible(false);
-    setProcessingAction(true);
+
+    // [UX] Haptics & Animation Start
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowSuccess(true);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true })
+    ]).start();
 
     try {
       await AsyncStorage.setItem('@Sirius:last_action_timestamp', String(new Date().getTime()));
@@ -367,26 +380,22 @@ export default function ChamadoDetalhes() {
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(novaLista));
       }
 
-      Alert.alert("Sucesso", "Chamado finalizado!", [
-        { 
-          text: "OK", 
-          onPress: () => {
-            if (router.canGoBack()) router.back();
-            else router.replace('/(tabs)');
-          }
-        }
-      ]);
-
+      // Call API in background
       SiriusApi.encerrarChamado({ 
         chamado_id: chamado.chamado_id, 
         laudo, 
         derivacao 
       }).catch(err => console.error("Erro sync encerramento:", err));
 
-    } catch (e) {
+      // Wait for animation to be appreciated, then navigate
+      setTimeout(() => {
+        if (router.canGoBack()) router.back();
+        else router.replace('/(tabs)');
+      }, 1800);
+
+    } catch {
+      setShowSuccess(false);
       Alert.alert("Erro", "Falha ao salvar dados locais.");
-    } finally {
-      setProcessingAction(false);
     }
   };
 
@@ -609,6 +618,27 @@ export default function ChamadoDetalhes() {
           </View>
         </View>
       </Modal>
+
+      {/* [UX] SUCCESS OVERLAY */}
+      <Modal visible={showSuccess} transparent animationType="none" statusBarTranslucent onRequestClose={() => {}}>
+        <View style={styles.successOverlay}>
+          <Animated.View
+            style={[
+              styles.successCard,
+              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }
+            ]}
+            accessibilityViewIsModal
+            accessibilityLabel="Chamado finalizado com sucesso"
+            accessibilityLiveRegion="assertive"
+          >
+            <View style={styles.successIconContainer}>
+              <MaterialIcons name="check-circle" size={80} color={COLORS.success} />
+            </View>
+            <Text style={styles.successTitle}>Chamado Finalizado!</Text>
+            <Text style={styles.successSubtitle}>Obrigado pelo seu trabalho.</Text>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -671,5 +701,12 @@ const styles = StyleSheet.create({
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 15 },
   optionChip: { padding: 10, borderRadius: 20, backgroundColor: '#F0F0F0' },
   optionSelected: { backgroundColor: COLORS.primary },
-  btnModalConfirm: { backgroundColor: COLORS.success, padding: 15, borderRadius: 12, alignItems: 'center' }
+  btnModalConfirm: { backgroundColor: COLORS.success, padding: 15, borderRadius: 12, alignItems: 'center' },
+
+  // [UX] Success Overlay Styles
+  successOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
+  successCard: { backgroundColor: 'white', padding: 30, borderRadius: 24, alignItems: 'center', elevation: 10, width: '80%', maxWidth: 300 },
+  successIconContainer: { marginBottom: 20 },
+  successTitle: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary, marginBottom: 8, textAlign: 'center' },
+  successSubtitle: { fontSize: 16, color: COLORS.subtext, textAlign: 'center' }
 });
