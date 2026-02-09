@@ -10,6 +10,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SiriusApi } from '../../../src/services/SiriusApi';
 import { stopRinging } from '../../../src/services/ChamadosLogic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/context/AuthContext';
 
@@ -367,6 +368,7 @@ export default function ChamadoDetalhes() {
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(novaLista));
       }
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Sucesso", "Chamado finalizado!", [
         { 
           text: "OK", 
@@ -569,17 +571,27 @@ export default function ChamadoDetalhes() {
         </View>
       )}
 
-      <Modal visible={modalVisible} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
+      <Modal
+        visible={modalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Finalizar Chamado</Text>
             
+            <Text style={styles.inputLabel}>Laudo Técnico *</Text>
             <TextInput 
               style={styles.input} 
               multiline 
               value={laudo} 
               onChangeText={setLaudo} 
               placeholder="Descreva o serviço realizado..." 
+              accessibilityLabel="Descrição do serviço realizado"
             />
             
             <View style={styles.optionsRow}>
@@ -588,12 +600,20 @@ export default function ChamadoDetalhes() {
                   key={opt} 
                   style={[styles.optionChip, derivacao === opt && styles.optionSelected]} 
                   onPress={() => setDerivacao(opt)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: derivacao === opt }}
+                  accessibilityLabel={opt}
                 >
                   <Text style={{fontSize: 12, color: derivacao === opt ? 'white' : 'black'}}>{opt}</Text>
                 </TouchableOpacity>
               ))}</View>
             
-            <TouchableOpacity style={styles.btnModalConfirm} onPress={handleEncerrar}>
+            <TouchableOpacity
+              style={styles.btnModalConfirm}
+              onPress={handleEncerrar}
+              accessibilityLabel="Confirmar finalização do chamado"
+              accessibilityHint="Salva o laudo e encerra o chamado"
+            >
               <Text style={{color: 'white', fontWeight: 'bold'}}>CONFIRMAR</Text>
             </TouchableOpacity>
             
@@ -603,11 +623,13 @@ export default function ChamadoDetalhes() {
                 setModalVisible(false);
                 setLaudo(""); 
               }}
+              accessibilityLabel="Cancelar"
+              accessibilityRole="button"
             >
               <Text style={{color: COLORS.subtext}}>Cancelar</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -667,6 +689,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: 'white', borderRadius: 20, padding: 25 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.primary, textAlign: 'center', marginBottom: 15 },
+  inputLabel: { fontSize: 14, fontWeight: 'bold', color: COLORS.text, marginBottom: 8 },
   input: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, height: 100, textAlignVertical: 'top' },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 15 },
   optionChip: { padding: 10, borderRadius: 20, backgroundColor: '#F0F0F0' },
