@@ -10,7 +10,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator, // <--- Importado
-  Platform,
   Keyboard,
   Animated,
   Easing
@@ -68,7 +67,6 @@ export default function SetorModal({
   const [presets, setPresets] = useState<any>(cachedPresets);
   const [newPresetName, setNewPresetName] = useState('');
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
-  const [loadingPreset, setLoadingPreset] = useState(false);
 
   // --- TOAST ---
   const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'success' });
@@ -129,12 +127,18 @@ export default function SetorModal({
       return;
     }
     
-    setLoadingPreset(true);
-    try {
-      const newPresets = { ...presets, [newPresetName]: localIds };
-      setPresets(newPresets);
-      if (onUpdatePresets) onUpdatePresets(newPresets);
+    // 1. OTIMISTA: Atualiza Estado e UI imediatamente
+    const newPresets = { ...presets, [newPresetName]: localIds };
+    setPresets(newPresets);
+    if (onUpdatePresets) onUpdatePresets(newPresets);
 
+    setNewPresetName('');
+    setIsCreatingPreset(false);
+    showToast("Sucesso", "Grupo salvo!", "success");
+    Keyboard.dismiss();
+
+    // 2. BACKGROUND: Tenta sincronizar
+    try {
       const response = await SiriusApi.managePresets(
           'save', 
           String(currentUser.id), 
@@ -142,17 +146,10 @@ export default function SetorModal({
       );
 
       if (response && response.success === false) throw new Error(response.error);
-      
-      setNewPresetName('');
-      setIsCreatingPreset(false);
-      showToast("Sucesso", "Grupo salvo!", "success");
-      Keyboard.dismiss(); 
 
     } catch (error: any) {
-      console.log("Erro salvar preset:", error);
-      showToast("Erro", "Salvo apenas localmente.", "error");
-    } finally {
-      setLoadingPreset(false);
+      console.log("Erro salvar preset (Sync):", error);
+      showToast("Aviso", "Salvo apenas neste dispositivo.", "info");
     }
   };
 
@@ -167,7 +164,7 @@ export default function SetorModal({
           delete newPresets[name];
           setPresets(newPresets);
           if (onUpdatePresets) onUpdatePresets(newPresets);
-          try { await SiriusApi.managePresets('delete', String(currentUser.id), { [name]: [] }); } catch(e) {}
+          try { await SiriusApi.managePresets('delete', String(currentUser.id), { [name]: [] }); } catch {}
           showToast("Removido", "Grupo excluído.", "info");
         }
       }
@@ -304,6 +301,15 @@ export default function SetorModal({
                   value={searchText}
                   onChangeText={setSearchText}
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchText('')}
+                    accessibilityLabel="Limpar busca"
+                    hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                  >
+                    <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
@@ -349,7 +355,6 @@ export default function SetorModal({
                             returnKeyType="done"
                             onSubmitEditing={handleCreatePreset}
                         />
-                        {loadingPreset ? <ActivityIndicator color={COLORS.primary} style={{marginRight: 10}} /> : (
                         <View style={{flexDirection: 'row'}}>
                             <TouchableOpacity onPress={handleCreatePreset} style={styles.btnConfirmGroup}>
                                 <MaterialIcons name="check" size={24} color="white" />
@@ -358,7 +363,6 @@ export default function SetorModal({
                                 <MaterialIcons name="close" size={24} color="#666" />
                             </TouchableOpacity>
                         </View>
-                        )}
                     </View>
                     )}
                 </View>
