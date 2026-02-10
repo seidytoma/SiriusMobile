@@ -125,6 +125,9 @@ export default function HomeScreen() {
     const myId = currentUser?.id ? String(currentUser.id) : '';
     const myName = currentUser?.name || '';
 
+    // [OTIMIZAÇÃO] Converte para Set antes do loop para busca O(1)
+    const idsSetoresSet = new Set(idsSetores);
+
     const emAtendimentoPorMim: any[] = [];
     const pendentesMeuSetor: any[] = [];
     const pendentesOutros: any[] = [];
@@ -136,7 +139,7 @@ export default function HomeScreen() {
       const isMyService = c.chamado_status === 'Em Atendimento' &&
         (usuarioId === myId || (myName && tecnicoNome === myName));
       
-      const isMySector = idsSetores.includes(String(c.cc_id));
+      const isMySector = idsSetoresSet.has(String(c.cc_id));
       c.isMySector = isMySector;
 
       if (isMyService) emAtendimentoPorMim.push(c);
