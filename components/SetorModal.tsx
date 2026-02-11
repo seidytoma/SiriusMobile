@@ -10,7 +10,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator, // <--- Importado
-  Platform,
   Keyboard,
   Animated,
   Easing
@@ -64,6 +63,7 @@ export default function SetorModal({
   const [activeTab, setActiveTab] = useState<'setores' | 'grupos'>('setores');
   const [localIds, setLocalIds] = useState<string[]>([]);
   const [searchText, setSearchText] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   const [presets, setPresets] = useState<any>(cachedPresets);
   const [newPresetName, setNewPresetName] = useState('');
@@ -296,20 +296,37 @@ export default function SetorModal({
 
           {activeTab === 'setores' ? (
             <>
-              <View style={styles.searchContainer}>
-                <MaterialIcons name="search" size={20} color="#999" />
+              <View style={[
+                styles.searchContainer,
+                isSearchFocused && { borderColor: COLORS.primary, borderWidth: 1, backgroundColor: '#FFF' }
+              ]}>
+                <MaterialIcons name="search" size={20} color={isSearchFocused ? COLORS.primary : "#999"} />
                 <TextInput 
                   style={styles.searchInput}
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  accessibilityLabel="Buscar setores"
+                  returnKeyType="search"
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchText('')}
+                    accessibilityLabel="Limpar busca"
+                    accessibilityRole="button"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
               {isLoading && cachedSetores.length === 0 ? (
                 <View style={styles.loadingContainer}>
-                   <ActivityIndicator size="large" color={COLORS.primary} />
+                   <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="Carregando setores" />
                    <Text style={styles.loadingText}>Sincronizando setores...</Text>
                    <Text style={styles.loadingSubtext}>Isso pode levar alguns segundos.</Text>
                 </View>
@@ -413,8 +430,8 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, color: '#999', fontWeight: '600' },
   tabTextActive: { color: COLORS.primary, fontWeight: 'bold' },
 
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.inputBg, marginHorizontal: 20, paddingHorizontal: 10, borderRadius: 8, height: 40, marginBottom: 10 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 14 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.inputBg, marginHorizontal: 20, paddingHorizontal: 10, borderRadius: 8, height: 40, marginBottom: 10, borderWidth: 1, borderColor: 'transparent' },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, height: '100%' },
 
   listContent: { paddingHorizontal: 20, paddingBottom: 20 },
   
