@@ -685,7 +685,11 @@ export default function HomeScreen() {
         onRequestClose={() => setLogoutModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-            <View style={styles.logoutModalContainer}>
+            <View
+                style={styles.logoutModalContainer}
+                accessibilityViewIsModal={true}
+                accessibilityRole="alert"
+            >
                 {/* Ícone de Topo */}
                 <View style={styles.logoutIconContainer}>
                     <MaterialIcons name="logout" size={32} color={COLORS.primary} />
@@ -700,6 +704,9 @@ export default function HomeScreen() {
                     <TouchableOpacity 
                         style={styles.btnCancelLogout} 
                         onPress={() => setLogoutModalVisible(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancelar saída"
+                        accessibilityHint="Fecha a janela e mantém você conectado"
                     >
                         <Text style={styles.btnCancelLogoutText}>Cancelar</Text>
                     </TouchableOpacity>
@@ -707,6 +714,9 @@ export default function HomeScreen() {
                     <TouchableOpacity 
                         style={styles.btnConfirmLogout} 
                         onPress={confirmLogout}
+                        accessibilityRole="button"
+                        accessibilityLabel="Confirmar saída"
+                        accessibilityHint="Desconecta sua conta e volta para o login"
                     >
                         <Text style={styles.btnConfirmLogoutText}>Sim, Sair</Text>
                     </TouchableOpacity>
