@@ -286,10 +286,22 @@ export default function SetorModal({
           </View>
 
           <View style={styles.tabs}>
-             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'setores' && styles.tabActive]}
+               onPress={() => setActiveTab('setores')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'setores' }}
+               accessibilityLabel="Mostrar lista de setores"
+             >
                <Text style={[styles.tabText, activeTab === 'setores' && styles.tabTextActive]}>Setores</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'grupos' && styles.tabActive]}
+               onPress={() => setActiveTab('grupos')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'grupos' }}
+               accessibilityLabel="Mostrar meus grupos de setores"
+             >
                <Text style={[styles.tabText, activeTab === 'grupos' && styles.tabTextActive]}>Meus Grupos</Text>
              </TouchableOpacity>
           </View>
@@ -303,7 +315,18 @@ export default function SetorModal({
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Campo de busca de setores"
+                  accessibilityHint="Digite para filtrar a lista de setores"
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchText('')}
+                    accessibilityLabel="Limpar busca"
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
