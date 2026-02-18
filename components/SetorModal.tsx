@@ -212,7 +212,8 @@ export default function SetorModal({
         activeOpacity={0.7}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: isSelected }}
-        accessibilityLabel={item.cc_descricao}
+        accessibilityLabel={`${item.cc_descricao}, ${statusText}`}
+        accessibilityHint="Toque duas vezes para alternar a seleção"
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle} numberOfLines={1}>{item.cc_descricao}</Text>
@@ -254,8 +255,13 @@ export default function SetorModal({
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <View style={styles.overlay} accessibilityViewIsModal={true}>
         {/* TOAST */}
         {toast.visible && (
             <Animated.View style={[
@@ -286,10 +292,20 @@ export default function SetorModal({
           </View>
 
           <View style={styles.tabs}>
-             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'setores' && styles.tabActive]}
+               onPress={() => setActiveTab('setores')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'setores' }}
+             >
                <Text style={[styles.tabText, activeTab === 'setores' && styles.tabTextActive]}>Setores</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'grupos' && styles.tabActive]}
+               onPress={() => setActiveTab('grupos')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'grupos' }}
+             >
                <Text style={[styles.tabText, activeTab === 'grupos' && styles.tabTextActive]}>Meus Grupos</Text>
              </TouchableOpacity>
           </View>
@@ -303,7 +319,13 @@ export default function SetorModal({
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Campo de busca"
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchText('')} accessibilityLabel="Limpar busca" hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                    <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
