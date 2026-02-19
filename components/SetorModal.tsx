@@ -254,7 +254,12 @@ export default function SetorModal({
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
         {/* TOAST */}
         {toast.visible && (
@@ -298,12 +303,24 @@ export default function SetorModal({
             <>
               <View style={styles.searchContainer}>
                 <MaterialIcons name="search" size={20} color="#999" />
-                <TextInput 
+                <TextInput
                   style={styles.searchInput}
                   placeholder="Buscar..."
+                  placeholderTextColor="#999"
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Campo de busca de setores"
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchText('')}
+                    accessibilityLabel="Limpar busca"
+                    accessibilityRole="button"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
