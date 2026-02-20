@@ -90,7 +90,7 @@ export default function LoginScreen() {
       <View style={styles.content}>
         
         {/* Envolvemos a Logo com TouchableWithoutFeedback para capturar o toque secreto */}
-        <TouchableWithoutFeedback onPress={handleSecretTap}>
+        <TouchableWithoutFeedback onPress={handleSecretTap} accessibilityLabel="Logo Sirius">
           <View style={styles.iconContainer}>
             <Image
               source={require('../assets/images/icon.png')}
