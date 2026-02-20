@@ -16,6 +16,7 @@ import {
   Easing
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { SiriusApi } from '../src/services/SiriusApi';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -286,10 +287,20 @@ export default function SetorModal({
           </View>
 
           <View style={styles.tabs}>
-             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'setores' && styles.tabActive]}
+               onPress={() => setActiveTab('setores')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'setores' }}
+             >
                <Text style={[styles.tabText, activeTab === 'setores' && styles.tabTextActive]}>Setores</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'grupos' && styles.tabActive]}
+               onPress={() => setActiveTab('grupos')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'grupos' }}
+             >
                <Text style={[styles.tabText, activeTab === 'grupos' && styles.tabTextActive]}>Meus Grupos</Text>
              </TouchableOpacity>
           </View>
@@ -298,12 +309,28 @@ export default function SetorModal({
             <>
               <View style={styles.searchContainer}>
                 <MaterialIcons name="search" size={20} color="#999" />
-                <TextInput 
+                <TextInput
                   style={styles.searchInput}
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Campo de busca"
+                  accessibilityHint="Digite para buscar setores"
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchText('');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                    accessibilityLabel="Limpar busca"
+                    accessibilityHint="Limpa o texto do campo de busca"
+                    accessibilityRole="button"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                     <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
