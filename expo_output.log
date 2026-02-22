@@ -4,44 +4,41 @@ Starting Metro Bundler
 Waiting on http://localhost:8081
 Logs for your project will appear below.
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web node_modules/expo-router/entry.js ▓▓▓░░░░░░░░░░░░░ 19.8% ( 44/140)
-λ node_modules/expo-router/node/render.js ▓▓░░░░░░░░░░░░░░ 17.3% (125/308)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 50.8% (181/254)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓░░░░░░░░ 56.0% (387/517)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 52.6% (299/417)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.4% (602/789)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.9% (451/635)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.2% (789/920)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.0% (667/827)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.3% ( 958/1036)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.6% ( 979/1065)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.3% (1103/1142)
-λ Bundled 23876ms node_modules/expo-router/node/render.js (1241 modules)
+Web node_modules/expo-router/entry.js ▓▓▓░░░░░░░░░░░░░ 21.3% (16/89)
+λ node_modules/expo-router/node/render.js ▓▓░░░░░░░░░░░░░░ 16.7% (125/306)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 50.7% (183/257)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓░░░░░░░░░ 46.7% (330/483)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 50.7% (300/452)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.0% (582/780)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 55.3% (397/534)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.9% (713/902)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.3% (681/812)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 81.6% ( 903/1007)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 82.9% ( 948/1041)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.4% (1072/1121)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.6% (1276/1298)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.8% (1201/1221)
+λ Bundled 24814ms node_modules/expo-router/node/render.js (1221 modules)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.3% (1322/1344)
-Web Bundled 27022ms node_modules/expo-router/entry.js (1365 modules)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 38.9% (399/640)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 87.4% (1016/1106)
-Web Bundled 8429ms node_modules/expo-router/entry.js (1366 modules)
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 65ms node_modules/expo-router/node/render.js (1 module)
-[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 660ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 168ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.6% (1321/1345)
+Web Bundled 28552ms node_modules/expo-router/entry.js (1365 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 41.9% (371/573)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.4% (869/997)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.1% (1283/1330)
+Web Bundled 10548ms node_modules/expo-router/entry.js (1366 modules)
  LOG  [web] Logs will appear in the browser console
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 48ms node_modules/expo-router/node/render.js (1 module)
+λ Bundled 71ms node_modules/expo-router/node/render.js (1 module)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 481ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 85ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 539ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 88ms node_modules/expo-router/entry.js (1 module)
  LOG  [web] Logs will appear in the browser console
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 55ms node_modules/expo-router/node/render.js (1 module)
+λ Bundled 71ms node_modules/expo-router/node/render.js (1 module)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 535ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 99ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 517ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 80ms node_modules/expo-router/entry.js (1 module)
  LOG  [web] Logs will appear in the browser console
