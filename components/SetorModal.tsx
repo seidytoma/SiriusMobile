@@ -15,6 +15,7 @@ import {
   Animated,
   Easing
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SiriusApi } from '../src/services/SiriusApi';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -102,6 +103,7 @@ export default function SetorModal({
   }, [visible, currentSelectedIds, cachedPresets]);
 
   const toggleSetor = (id: string) => {
+    Haptics.selectionAsync();
     setLocalIds(prev => {
       if (prev.includes(id)) return prev.filter(item => item !== id);
       return [...prev, id];
@@ -272,7 +274,10 @@ export default function SetorModal({
             </Animated.View>
         )}
 
-        <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <View
+          style={[styles.container, { paddingBottom: insets.bottom }]}
+          accessibilityViewIsModal={true}
+        >
           
           <View style={styles.header}>
             <Text style={styles.title}>Gerenciar Setores</Text>
@@ -303,7 +308,21 @@ export default function SetorModal({
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Buscar setores"
                 />
+                {searchText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchText('');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                    accessibilityLabel="Limpar busca"
+                    accessibilityRole="button"
+                    style={{ padding: 4 }}
+                  >
+                    <MaterialIcons name="close" size={20} color="#999" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
