@@ -15,6 +15,7 @@ import {
   Animated,
   Easing
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SiriusApi } from '../src/services/SiriusApi';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -102,6 +103,7 @@ export default function SetorModal({
   }, [visible, currentSelectedIds, cachedPresets]);
 
   const toggleSetor = (id: string) => {
+    Haptics.selectionAsync();
     setLocalIds(prev => {
       if (prev.includes(id)) return prev.filter(item => item !== id);
       return [...prev, id];
@@ -115,6 +117,7 @@ export default function SetorModal({
 
   // --- AÇÕES DE GRUPO ---
   const handleApplyPreset = (presetIds: string[]) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setLocalIds(presetIds);
     showToast("Grupo Aplicado", `${presetIds.length} setores foram selecionados.`, 'success');
   };
@@ -146,11 +149,13 @@ export default function SetorModal({
       setNewPresetName('');
       setIsCreatingPreset(false);
       showToast("Sucesso", "Grupo salvo!", "success");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Keyboard.dismiss(); 
 
     } catch (error: any) {
       console.log("Erro salvar preset:", error);
       showToast("Erro", "Salvo apenas localmente.", "error");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoadingPreset(false);
     }
@@ -169,6 +174,7 @@ export default function SetorModal({
           if (onUpdatePresets) onUpdatePresets(newPresets);
           try { await SiriusApi.managePresets('delete', String(currentUser.id), { [name]: [] }); } catch(e) {}
           showToast("Removido", "Grupo excluído.", "info");
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
       }
     ]);
@@ -304,6 +310,19 @@ export default function SetorModal({
                   value={searchText}
                   onChangeText={setSearchText}
                 />
+                {searchText.length > 0 && (
+                    <TouchableOpacity
+                        onPress={() => {
+                            setSearchText('');
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        accessibilityLabel="Limpar busca"
+                        accessibilityRole="button"
+                        style={{ padding: 4 }}
+                    >
+                        <MaterialIcons name="close" size={20} color="#999" />
+                    </TouchableOpacity>
+                )}
               </View>
 
               {/* LÓGICA DE LOADING VISUAL */}
