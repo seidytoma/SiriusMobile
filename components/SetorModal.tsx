@@ -10,7 +10,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator, // <--- Importado
-  Platform,
   Keyboard,
   Animated,
   Easing
@@ -167,7 +166,7 @@ export default function SetorModal({
           delete newPresets[name];
           setPresets(newPresets);
           if (onUpdatePresets) onUpdatePresets(newPresets);
-          try { await SiriusApi.managePresets('delete', String(currentUser.id), { [name]: [] }); } catch(e) {}
+          try { await SiriusApi.managePresets('delete', String(currentUser.id), { [name]: [] }); } catch {}
           showToast("Removido", "Grupo excluído.", "info");
         }
       }
@@ -285,11 +284,23 @@ export default function SetorModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.tabs}>
-             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')}>
+          <View style={styles.tabs} accessibilityRole="tablist">
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'setores' && styles.tabActive]}
+               onPress={() => setActiveTab('setores')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'setores' }}
+               accessibilityLabel="Aba Setores"
+             >
                <Text style={[styles.tabText, activeTab === 'setores' && styles.tabTextActive]}>Setores</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')}>
+             <TouchableOpacity
+               style={[styles.tab, activeTab === 'grupos' && styles.tabActive]}
+               onPress={() => setActiveTab('grupos')}
+               accessibilityRole="tab"
+               accessibilityState={{ selected: activeTab === 'grupos' }}
+               accessibilityLabel="Aba Meus Grupos"
+             >
                <Text style={[styles.tabText, activeTab === 'grupos' && styles.tabTextActive]}>Meus Grupos</Text>
              </TouchableOpacity>
           </View>
@@ -303,6 +314,8 @@ export default function SetorModal({
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Buscar setores"
+                  accessibilityHint="Digite para filtrar a lista de setores"
                 />
               </View>
 
@@ -322,7 +335,7 @@ export default function SetorModal({
                   initialNumToRender={10}
                   keyboardShouldPersistTaps="handled" 
                   ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
+                    <View style={styles.emptyContainer} accessibilityRole="alert">
                         <MaterialIcons name="search-off" size={40} color="#DDD" />
                         <Text style={styles.emptyText}>Nenhum setor encontrado.</Text>
                     </View>
@@ -378,7 +391,13 @@ export default function SetorModal({
             porque o <View style={styles.container}> acima empurrou ele. */}
           <View style={styles.footer}>
              <Text style={styles.selectionCount}>{localIds.length} selecionados</Text>
-             <TouchableOpacity style={styles.btnSave} onPress={handleSave}>
+             <TouchableOpacity
+               style={styles.btnSave}
+               onPress={handleSave}
+               accessibilityLabel={`Confirmar seleção de ${localIds.length} setores`}
+               accessibilityRole="button"
+               accessibilityHint="Fecha o modal e salva as alterações"
+             >
                <Text style={styles.btnSaveText}>Confirmar</Text>
              </TouchableOpacity>
           </View>
