@@ -5,3 +5,7 @@
 ## 2025-10-26 - Accessibility Pattern: Custom Checkboxes
 **Learning:** Custom list items behaving as checkboxes (e.g., sector selection) often use visual cues (icons/colors) without semantic roles.
 **Action:** Use `accessibilityRole="checkbox"` and `accessibilityState={{ checked: boolean }}` on the interactive container.
+
+## 2025-10-27 - Accessibility Pattern: Empty States
+**Learning:** Empty states in lists (`ListEmptyComponent`) are often overlooked by screen readers unless they have an explicit role.
+**Action:** Always wrap empty state content in a container with `accessibilityRole="alert"` to ensure immediate announcement.

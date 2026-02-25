@@ -17,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SiriusApi } from '../../src/services/SiriusApi';
@@ -500,11 +501,18 @@ export default function HomeScreen() {
         equipText = `Equipamento ID: ${item.equipamento_id}`;
     }
 
+    const accessibilityLabelText = `Chamado ${item.chamado_numero || 'sem número'}. Prioridade: ${item.chamado_prioridade}. Status: ${item.chamado_status}. Problema: ${item.chamado_descricaoproblema}. Local: ${item.cc_descricao}. Equipamento: ${equipText}. Tempo decorrido: ${getTempoDecorrido(item)}.`;
+
     return (
       <TouchableOpacity
         style={[styles.card, isActive && styles.cardActive, item.isMySector && !isActive && styles.cardMySector, isCritical && styles.cardCritical]}
         activeOpacity={0.7}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabelText}
+        accessibilityHint="Toque duas vezes para ver detalhes do chamado"
         onPress={() => {
+            Haptics.selectionAsync();
             router.push({ 
                 pathname: "/(tabs)/chamados/[id]", 
                 params: { 
@@ -625,7 +633,10 @@ export default function HomeScreen() {
         // orientando o usuário corretamente.
         ListEmptyComponent={
             (!loading && !refreshing && sections.length === 0) ? (
-                <View style={{ alignItems: 'center', marginTop: 100 }}>
+                <View
+                    style={{ alignItems: 'center', marginTop: 100 }}
+                    accessibilityRole="alert"
+                >
                     <MaterialIcons 
                         name={meusSetoresIds.length > 0 ? "inbox" : "filter-list"} 
                         size={60} 
