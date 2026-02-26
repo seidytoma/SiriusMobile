@@ -74,6 +74,29 @@ export default function SetorModal({
   const [toast, setToast] = useState({ visible: false, title: '', message: '', type: 'success' });
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(-20)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // --- ANIMAÇÃO DE PULSO ---
+  useEffect(() => {
+    if (localIds.length > 0) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1); // Reseta se não houver seleção
+    }
+  }, [localIds.length]);
 
   const showToast = (title: string, message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ visible: true, title, message, type });
@@ -275,10 +298,10 @@ export default function SetorModal({
         <View style={[styles.container, { paddingBottom: insets.bottom }]}>
           
           <View style={styles.header}>
-            <Text style={styles.title}>Gerenciar Setores</Text>
+            <Text style={styles.title} accessibilityRole="header">Gerenciar Setores</Text>
             <TouchableOpacity
               onPress={onClose}
-              accessibilityLabel="Fechar modal de setores"
+              accessibilityLabel="Fechar modal de seleção de setores"
               accessibilityRole="button"
             >
               <MaterialIcons name="close" size={24} color="#666" />
@@ -303,6 +326,7 @@ export default function SetorModal({
                   placeholder="Buscar..."
                   value={searchText}
                   onChangeText={setSearchText}
+                  accessibilityLabel="Buscar setor"
                 />
               </View>
 
@@ -378,9 +402,15 @@ export default function SetorModal({
             porque o <View style={styles.container}> acima empurrou ele. */}
           <View style={styles.footer}>
              <Text style={styles.selectionCount}>{localIds.length} selecionados</Text>
-             <TouchableOpacity style={styles.btnSave} onPress={handleSave}>
-               <Text style={styles.btnSaveText}>Confirmar</Text>
-             </TouchableOpacity>
+             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+               <TouchableOpacity
+                 style={styles.btnSave}
+                 onPress={handleSave}
+                 accessibilityLabel="Confirmar seleção de setores"
+               >
+                 <Text style={styles.btnSaveText}>Confirmar</Text>
+               </TouchableOpacity>
+             </Animated.View>
           </View>
 
         </View>
