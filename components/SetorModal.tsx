@@ -240,7 +240,7 @@ export default function SetorModal({
             <TouchableOpacity onPress={() => handleApplyPreset(presets[item])} style={styles.btnApply}>
               <Text style={styles.btnApplyText}>Usar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeletePreset(item)} style={styles.btnDelete}>
+            <TouchableOpacity onPress={() => handleDeletePreset(item)} style={styles.btnDelete} accessibilityRole="button" accessibilityLabel={`Excluir grupo ${item}`}>
               <MaterialIcons name="delete" size={20} color={COLORS.error} />
             </TouchableOpacity>
          </View>
@@ -285,11 +285,11 @@ export default function SetorModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.tabs}>
-             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')}>
+          <View style={styles.tabs} accessibilityRole="tablist">
+             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')} accessibilityRole="tab" accessibilityState={{ selected: activeTab === 'setores' }}>
                <Text style={[styles.tabText, activeTab === 'setores' && styles.tabTextActive]}>Setores</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')}>
+             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')} accessibilityRole="tab" accessibilityState={{ selected: activeTab === 'grupos' }}>
                <Text style={[styles.tabText, activeTab === 'grupos' && styles.tabTextActive]}>Meus Grupos</Text>
              </TouchableOpacity>
           </View>
@@ -322,7 +322,7 @@ export default function SetorModal({
                   initialNumToRender={10}
                   keyboardShouldPersistTaps="handled" 
                   ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
+                    <View style={styles.emptyContainer} accessibilityRole="alert">
                         <MaterialIcons name="search-off" size={40} color="#DDD" />
                         <Text style={styles.emptyText}>Nenhum setor encontrado.</Text>
                     </View>
@@ -351,10 +351,10 @@ export default function SetorModal({
                         />
                         {loadingPreset ? <ActivityIndicator color={COLORS.primary} style={{marginRight: 10}} /> : (
                         <View style={{flexDirection: 'row'}}>
-                            <TouchableOpacity onPress={handleCreatePreset} style={styles.btnConfirmGroup}>
+                            <TouchableOpacity onPress={handleCreatePreset} style={styles.btnConfirmGroup} accessibilityRole="button" accessibilityLabel="Confirmar criação do grupo">
                                 <MaterialIcons name="check" size={24} color="white" />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsCreatingPreset(false)} style={styles.btnCancelGroup}>
+                            <TouchableOpacity onPress={() => setIsCreatingPreset(false)} style={styles.btnCancelGroup} accessibilityRole="button" accessibilityLabel="Cancelar criação do grupo">
                                 <MaterialIcons name="close" size={24} color="#666" />
                             </TouchableOpacity>
                         </View>
@@ -368,7 +368,7 @@ export default function SetorModal({
                     keyExtractor={item => item}
                     renderItem={renderGrupoItem}
                     contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={<Text style={styles.emptyText}>Nenhum grupo salvo.</Text>}
+                    ListEmptyComponent={<Text style={styles.emptyText} accessibilityRole="alert">Nenhum grupo salvo.</Text>}
                     keyboardShouldPersistTaps="handled"
                 />
             </View>
