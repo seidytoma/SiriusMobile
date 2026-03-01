@@ -625,7 +625,7 @@ export default function HomeScreen() {
         // orientando o usuário corretamente.
         ListEmptyComponent={
             (!loading && !refreshing && sections.length === 0) ? (
-                <View style={{ alignItems: 'center', marginTop: 100 }}>
+                <View style={{ alignItems: 'center', marginTop: 100 }} accessibilityRole="alert">
                     <MaterialIcons 
                         name={meusSetoresIds.length > 0 ? "inbox" : "filter-list"} 
                         size={60} 
