@@ -237,10 +237,20 @@ export default function SetorModal({
            <Text style={styles.grupoSubtitle}>{count} setores</Text>
          </View>
          <View style={{flexDirection: 'row'}}>
-            <TouchableOpacity onPress={() => handleApplyPreset(presets[item])} style={styles.btnApply}>
+            <TouchableOpacity
+              onPress={() => handleApplyPreset(presets[item])}
+              style={styles.btnApply}
+              accessibilityRole="button"
+              accessibilityLabel={`Usar grupo ${item}`}
+            >
               <Text style={styles.btnApplyText}>Usar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeletePreset(item)} style={styles.btnDelete}>
+            <TouchableOpacity
+              onPress={() => handleDeletePreset(item)}
+              style={styles.btnDelete}
+              accessibilityRole="button"
+              accessibilityLabel={`Excluir grupo ${item}`}
+            >
               <MaterialIcons name="delete" size={20} color={COLORS.error} />
             </TouchableOpacity>
          </View>
@@ -334,7 +344,11 @@ export default function SetorModal({
             <View style={{flex: 1}}>
                 <View style={styles.createGroupContainer}>
                     {!isCreatingPreset ? (
-                    <TouchableOpacity style={styles.btnNewGroup} onPress={() => setIsCreatingPreset(true)}>
+                    <TouchableOpacity
+                        style={styles.btnNewGroup}
+                        onPress={() => setIsCreatingPreset(true)}
+                        accessibilityRole="button"
+                    >
                         <MaterialIcons name="add" size={20} color={COLORS.primary} />
                         <Text style={styles.btnNewGroupText}>Salvar seleção atual como Grupo</Text>
                     </TouchableOpacity>
@@ -351,10 +365,20 @@ export default function SetorModal({
                         />
                         {loadingPreset ? <ActivityIndicator color={COLORS.primary} style={{marginRight: 10}} /> : (
                         <View style={{flexDirection: 'row'}}>
-                            <TouchableOpacity onPress={handleCreatePreset} style={styles.btnConfirmGroup}>
+                            <TouchableOpacity
+                                onPress={handleCreatePreset}
+                                style={styles.btnConfirmGroup}
+                                accessibilityRole="button"
+                                accessibilityLabel="Confirmar criação do grupo"
+                            >
                                 <MaterialIcons name="check" size={24} color="white" />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setIsCreatingPreset(false)} style={styles.btnCancelGroup}>
+                            <TouchableOpacity
+                                onPress={() => setIsCreatingPreset(false)}
+                                style={styles.btnCancelGroup}
+                                accessibilityRole="button"
+                                accessibilityLabel="Cancelar criação do grupo"
+                            >
                                 <MaterialIcons name="close" size={24} color="#666" />
                             </TouchableOpacity>
                         </View>
