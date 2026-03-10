@@ -285,11 +285,21 @@ export default function SetorModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.tabs}>
-             <TouchableOpacity style={[styles.tab, activeTab === 'setores' && styles.tabActive]} onPress={() => setActiveTab('setores')}>
+          <View style={styles.tabs} accessibilityRole="tablist">
+             <TouchableOpacity
+                style={[styles.tab, activeTab === 'setores' && styles.tabActive]}
+                onPress={() => setActiveTab('setores')}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activeTab === 'setores' }}
+             >
                <Text style={[styles.tabText, activeTab === 'setores' && styles.tabTextActive]}>Setores</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={[styles.tab, activeTab === 'grupos' && styles.tabActive]} onPress={() => setActiveTab('grupos')}>
+             <TouchableOpacity
+                style={[styles.tab, activeTab === 'grupos' && styles.tabActive]}
+                onPress={() => setActiveTab('grupos')}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activeTab === 'grupos' }}
+             >
                <Text style={[styles.tabText, activeTab === 'grupos' && styles.tabTextActive]}>Meus Grupos</Text>
              </TouchableOpacity>
           </View>

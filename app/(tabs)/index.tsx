@@ -662,18 +662,25 @@ export default function HomeScreen() {
             AsyncStorage.setItem(CACHE_PRESETS, JSON.stringify(newPresets));
         }}
         onSave={async (novosIds: string[]) => {
+          // Optimistic UI updates
           setMeusSetoresIds(novosIds);
           setoresIdsRef.current = novosIds;
           await AsyncStorage.setItem(CACHE_SETORES_IDS, JSON.stringify(novosIds));
+
+          // Re-organize immediately from cache based on new selected sectors
           const cache = await AsyncStorage.getItem(CACHE_CHAMADOS);
-          if (cache) organizarChamados(JSON.parse(cache), novosIds);
+          if (cache) {
+              // Show the visual change immediately before hitting the backend
+              organizarChamados(JSON.parse(cache), novosIds);
+          }
 
           setRefreshing(true); 
-          try {
-            await SiriusApi.saveResponsabilidades(novosIds, currentUser);
-            await handleLoadChamados(novosIds, false, true);
-          } catch (e) { console.log(e); } 
-          finally { setRefreshing(false); }
+
+          // Now perform the backend calls asynchronously
+          SiriusApi.saveResponsabilidades(novosIds, currentUser)
+            .then(() => handleLoadChamados(novosIds, false, true))
+            .catch(e => console.log(e))
+            .finally(() => setRefreshing(false));
         }}
       />
 
