@@ -90,12 +90,18 @@ export default function LoginScreen() {
       <View style={styles.content}>
         
         {/* Envolvemos a Logo com TouchableWithoutFeedback para capturar o toque secreto */}
-        <TouchableWithoutFeedback onPress={handleSecretTap}>
+        <TouchableWithoutFeedback
+          onPress={handleSecretTap}
+          accessibilityLabel="Logo Sirius"
+          accessibilityRole="imagebutton"
+        >
           <View style={styles.iconContainer}>
             <Image
               source={require('../assets/images/icon.png')}
               style={styles.logo}
               resizeMode="contain"
+              accessibilityRole="image"
+              accessibilityLabel="Logo Sirius Mobile"
             />
           </View>
         </TouchableWithoutFeedback>
@@ -114,6 +120,9 @@ export default function LoginScreen() {
           ]}
           disabled={isAuthenticating}
           onPress={handleGoogleLoginNative}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isAuthenticating }}
+          accessibilityLabel="Entrar com conta Google HSL"
         >
           {isAuthenticating ? (
             <ActivityIndicator color="#003366" />
@@ -140,6 +149,9 @@ export default function LoginScreen() {
             style={styles.btnDev}
             onPress={handleDevLogin}
             disabled={isAuthenticating}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isAuthenticating }}
+            accessibilityLabel="Entrar no modo desenvolvedor"
           >
             <Text style={styles.btnDevText}>
               [DEV] Acesso Bypass Liberado
