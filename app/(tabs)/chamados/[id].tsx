@@ -420,9 +420,23 @@ export default function ChamadoDetalhes() {
         <Text style={styles.headerTitle}>Detalhes do Chamado</Text>
       </View>
 
-      <View style={styles.tabContainer}>
-        <TouchableOpacity style={[styles.tabBtn, activeTab === 'detalhes' && styles.tabActive]} onPress={() => setActiveTab('detalhes')}><Text style={[styles.tabText, activeTab === 'detalhes' && styles.tabTextActive]}>DETALHES</Text></TouchableOpacity>
-        <TouchableOpacity style={[styles.tabBtn, activeTab === 'chat' && styles.tabActive]} onPress={() => setActiveTab('chat')}><Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>CHAT ({messages.length})</Text></TouchableOpacity>
+      <View style={styles.tabContainer} accessibilityRole="tablist">
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'detalhes' && styles.tabActive]}
+          onPress={() => setActiveTab('detalhes')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'detalhes' }}
+        >
+          <Text style={[styles.tabText, activeTab === 'detalhes' && styles.tabTextActive]}>DETALHES</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'chat' && styles.tabActive]}
+          onPress={() => setActiveTab('chat')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'chat' }}
+        >
+          <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>CHAT ({messages.length})</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{flex: 1}}>
@@ -501,7 +515,14 @@ export default function ChamadoDetalhes() {
                 returnKeyType="send"
                 onSubmitEditing={handleSendMessage}
               />
-              <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn}>
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={[styles.sendBtn, (!newMessage.trim() || sendingMsg) && { opacity: 0.5 }]}
+                disabled={!newMessage.trim() || sendingMsg}
+                accessibilityRole="button"
+                accessibilityLabel="Enviar mensagem"
+                accessibilityState={{ disabled: !newMessage.trim() || sendingMsg }}
+              >
                 {sendingMsg ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
