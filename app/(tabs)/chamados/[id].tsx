@@ -501,7 +501,17 @@ export default function ChamadoDetalhes() {
                 returnKeyType="send"
                 onSubmitEditing={handleSendMessage}
               />
-              <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn}>
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={[
+                  styles.sendBtn,
+                  (!newMessage.trim() || sendingMsg) && { opacity: 0.5 }
+                ]}
+                disabled={!newMessage.trim() || sendingMsg}
+                accessibilityLabel="Enviar mensagem"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !newMessage.trim() || sendingMsg }}
+              >
                 {sendingMsg ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
