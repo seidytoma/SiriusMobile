@@ -414,7 +414,12 @@ export default function ChamadoDetalhes() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{top:15, bottom:15, left:15, right:15}}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{top:15, bottom:15, left:15, right:15}}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+        >
           <MaterialIcons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes do Chamado</Text>
@@ -501,7 +506,14 @@ export default function ChamadoDetalhes() {
                 returnKeyType="send"
                 onSubmitEditing={handleSendMessage}
               />
-              <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn}>
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={[styles.sendBtn, (!newMessage.trim() || sendingMsg) && { opacity: 0.5 }]}
+                disabled={!newMessage.trim() || sendingMsg}
+                accessibilityRole="button"
+                accessibilityLabel="Enviar mensagem"
+                accessibilityState={{ disabled: !newMessage.trim() || sendingMsg }}
+              >
                 {sendingMsg ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
