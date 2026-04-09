@@ -414,15 +414,34 @@ export default function ChamadoDetalhes() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{top:15, bottom:15, left:15, right:15}}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{top:15, bottom:15, left:15, right:15}}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+        >
           <MaterialIcons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes do Chamado</Text>
       </View>
 
-      <View style={styles.tabContainer}>
-        <TouchableOpacity style={[styles.tabBtn, activeTab === 'detalhes' && styles.tabActive]} onPress={() => setActiveTab('detalhes')}><Text style={[styles.tabText, activeTab === 'detalhes' && styles.tabTextActive]}>DETALHES</Text></TouchableOpacity>
-        <TouchableOpacity style={[styles.tabBtn, activeTab === 'chat' && styles.tabActive]} onPress={() => setActiveTab('chat')}><Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>CHAT ({messages.length})</Text></TouchableOpacity>
+      <View style={styles.tabContainer} accessibilityRole="tablist">
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'detalhes' && styles.tabActive]}
+          onPress={() => setActiveTab('detalhes')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'detalhes' }}
+        >
+          <Text style={[styles.tabText, activeTab === 'detalhes' && styles.tabTextActive]}>DETALHES</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'chat' && styles.tabActive]}
+          onPress={() => setActiveTab('chat')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'chat' }}
+        >
+          <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>CHAT ({messages.length})</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{flex: 1}}>
@@ -501,7 +520,14 @@ export default function ChamadoDetalhes() {
                 returnKeyType="send"
                 onSubmitEditing={handleSendMessage}
               />
-              <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn}>
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={[styles.sendBtn, { opacity: (!newMessage.trim() || sendingMsg) ? 0.5 : 1 }]}
+                disabled={!newMessage.trim() || sendingMsg}
+                accessibilityRole="button"
+                accessibilityLabel="Enviar mensagem"
+                accessibilityState={{ disabled: !newMessage.trim() || sendingMsg }}
+              >
                 {sendingMsg ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
