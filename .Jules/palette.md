@@ -5,3 +5,6 @@
 ## 2025-10-26 - Accessibility Pattern: Custom Checkboxes
 **Learning:** Custom list items behaving as checkboxes (e.g., sector selection) often use visual cues (icons/colors) without semantic roles.
 **Action:** Use `accessibilityRole="checkbox"` and `accessibilityState={{ checked: boolean }}` on the interactive container.
+## 2025-10-26 - Accessibility Pattern: Form buttons with Icons
+**Learning:** Sending messages in chat needs disabled status tied to empty state and clear labels for accessibility.
+**Action:** When adding accessibility to complex text inputs ensure opacity and disabled flags accompany the accessibility labels.
