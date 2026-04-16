@@ -1,47 +1,180 @@
+
+> sirius-mobile@1.0.0 web /app
+> expo start --web
+
 Starting project at /app
 React Compiler enabled
 Starting Metro Bundler
 Waiting on http://localhost:8081
 Logs for your project will appear below.
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web node_modules/expo-router/entry.js ▓▓▓░░░░░░░░░░░░░ 19.8% ( 44/140)
-λ node_modules/expo-router/node/render.js ▓▓░░░░░░░░░░░░░░ 17.3% (125/308)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 50.8% (181/254)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓░░░░░░░░ 56.0% (387/517)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 52.6% (299/417)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.4% (602/789)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.9% (451/635)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.2% (789/920)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.0% (667/827)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.3% ( 958/1036)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.6% ( 979/1065)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.3% (1103/1142)
-λ Bundled 23876ms node_modules/expo-router/node/render.js (1241 modules)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 37.1% ( 37/160)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓░░░░░░░░░░░░░░░  7.3% ( 64/253)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 37.1% (160/333)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓▓▓▓░░░░░░░░░░░░ 30.5% (212/384)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 37.1% (340/566)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.1% (335/569)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 51.5% (569/793)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 57.0% (539/714)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 71.7% (783/925)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.9% (752/925)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.3% ( 981/1075)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 82.0% ( 952/1051)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 88.5% (1118/1190)
+λ node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.0% (1092/1145)
+λ Bundled 26841ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1293 modules)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.3% (1322/1344)
-Web Bundled 27022ms node_modules/expo-router/entry.js (1365 modules)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 38.9% (399/640)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 87.4% (1016/1106)
-Web Bundled 8429ms node_modules/expo-router/entry.js (1366 modules)
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 65ms node_modules/expo-router/node/render.js (1 module)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98.8% (1358/1366)
+Web Bundled 30358ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1366 modules)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98.8% (1358/1366)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓░░░░░░░░░░░░ 27.2% (190/364)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 53.1% (454/623)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.9% (853/973)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.0% (1088/1153)
+Web Bundled 15685ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1368 modules)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 81ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 660ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 168ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 1179ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 64ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 48ms node_modules/expo-router/node/render.js (1 module)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 89ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 481ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 85ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 547ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 121ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 55ms node_modules/expo-router/node/render.js (1 module)
+λ Bundled 51ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
 "shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 535ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 99ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 444ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 68ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
  LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 51ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 461ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 137ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 77ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 558ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 162ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+λ Bundled 42ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 427ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 69ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+λ Bundled 42ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 405ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 74ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 53ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 423ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 62ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 76ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 606ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 120ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 57ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 472ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 63ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 94ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 613ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 137ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 58ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 459ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 65ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 50ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 440ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 84ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 70ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 534ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 118ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 48ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 439ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 72ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 78ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 598ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 85ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 63ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 482ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 77ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+λ Bundled 71ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 467ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 61ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 75ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 604ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 88ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 61ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 491ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 63ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 40ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/node/render.js (1 module)
+[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 418ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+Web Bundled 72ms node_modules/.pnpm/expo-router@6.0.23_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_412f9e654c8df7bbba9bd08dc26d8309/node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+ ELIFECYCLE  Command failed.
