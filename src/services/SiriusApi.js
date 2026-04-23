@@ -1,28 +1,28 @@
 // src/services/SiriusApi.js
 
 // URL do seu Google Apps Script
-const API_URL = 'https://script.google.com/a/macros/hsl.org.br/s/AKfycbxNaSJzNEDCiUhEYakZ7MCXEXkJfFC3IDBvwAGq_cbm6B4hBcyJCnk53SlVnN60hsuX/exec';
+const API_URL = 'https://script.google.com/a/macros/hsl.org.br/s/AKfycbwDokXchAYBvveC5gT90MeaUQqWjMFZp4HUrcl_liOHtkcCbWEm0PgMVSZQ0QVemDgr/exec';
 
 /**
- * [FUN«√O MESTRA] - O "CoraÁ„o" da API
+ * [FUNÔøΩÔøΩO MESTRA] - O "CoraÔøΩÔøΩo" da API
  * Substitui todos os 'fetch' repetitivos.
- * Gerencia Timeout (15s), Erros de Rede e JSON inv·lido.
+ * Gerencia Timeout (15s), Erros de Rede e JSON invÔøΩlido.
  */
 async function apiRequest(payload, timeout = 15000) {
   try {
-    // 1. Cria um contador de tempo (AbortController) para n„o travar o app
+    // 1. Cria um contador de tempo (AbortController) para nÔøΩo travar o app
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
 
     // 2. Faz a chamada
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Header padr„o do GAS
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Header padrÔøΩo do GAS
       body: JSON.stringify(payload),
-      signal: controller.signal // Liga o cronÙmetro
+      signal: controller.signal // Liga o cronÔøΩmetro
     });
 
-    clearTimeout(id); // Para o cronÙmetro se deu certo
+    clearTimeout(id); // Para o cronÔøΩmetro se deu certo
 
     if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
 
@@ -31,26 +31,26 @@ async function apiRequest(payload, timeout = 15000) {
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.warn("[API] Resposta n„o-JSON (Erro interno do Google):", text.substring(0, 50));
-      return { success: false, error: "Servidor inst·vel. Tente novamente." };
+      console.warn("[API] Resposta nÔøΩo-JSON (Erro interno do Google):", text.substring(0, 50));
+      return { success: false, error: "Servidor instÔøΩvel. Tente novamente." };
     }
 
   } catch (error) {
-    // 4. Tratamento de erros especÌficos
+    // 4. Tratamento de erros especÔøΩficos
     if (error.name === 'AbortError') {
-      console.warn("[API] Timeout: A internet est· muito lenta.");
+      console.warn("[API] Timeout: A internet estÔøΩ muito lenta.");
       return { success: false, error: "Tempo limite excedido." };
     }
-    console.warn("[API] Erro de Conex„o:", error.message);
-    return { success: false, error: "Sem conex„o com a internet." };
+    console.warn("[API] Erro de ConexÔøΩo:", error.message);
+    return { success: false, error: "Sem conexÔøΩo com a internet." };
   }
 }
 
 export const SiriusApi = {
   
-  // --- AUTENTICA«√O ---
+  // --- AUTENTICAÔøΩÔøΩO ---
   async savePushToken(usuarioId, pushToken) {
-    // Usa a funÁ„o mestra (veja como fica limpo)
+    // Usa a funÔøΩÔøΩo mestra (veja como fica limpo)
     return await apiRequest({
       action: 'saveToken', 
       sheetName: 'USUARIOS',
@@ -68,7 +68,7 @@ export const SiriusApi = {
   },
 
 
-  // Remove o token do backend para parar de receber notificaÁıes
+  // Remove o token do backend para parar de receber notificaÔøΩÔøΩes
   async removePushToken(usuarioId) {
     return await apiRequest({
       action: 'removeToken', 
@@ -77,7 +77,7 @@ export const SiriusApi = {
   },
 
   // --- CHAMADOS ---
-  // Esta funÁ„o precisa ser diferente pois È GET e retorna Array direto
+  // Esta funÔøΩÔøΩo precisa ser diferente pois ÔøΩ GET e retorna Array direto
   async getChamadosAbertos() {
     try {
       const url = `${API_URL}?mobile=true&action=getChamados`;
@@ -90,11 +90,11 @@ export const SiriusApi = {
       if (!response.ok) throw new Error("HTTP " + response.status);
       const json = await response.json();
       
-      // Retorna a lista APENAS se for um array v·lido
+      // Retorna a lista APENAS se for um array vÔøΩlido
       return Array.isArray(json) ? json : null; 
     } catch (error) {
       console.warn("Erro ao buscar chamados:", error.message);
-      return null; // Retorna NULL para indicar erro, n„o lista vazia
+      return null; // Retorna NULL para indicar erro, nÔøΩo lista vazia
     }
   },
 
@@ -142,7 +142,7 @@ export const SiriusApi = {
       return json.success ? json.messages : []; 
     } catch (e) {
       console.log("Erro Chat Sync:", e.message);
-      return null; // Retorna NULL para a UI saber que deu erro e n„o apagar as mensagens
+      return null; // Retorna NULL para a UI saber que deu erro e nÔøΩo apagar as mensagens
     }
   },
  
@@ -170,12 +170,232 @@ export const SiriusApi = {
   // --- SMART POLLING (ECONOMIA DE DADOS) ---
   async checkUpdates(lastTimestamp) {
     try {
-      // Chamada GET ultra-r·pida
+      // Chamada GET ultra-rÔøΩpida
       const url = `${API_URL}?mobile=true&action=checkUpdate&lastTime=${lastTimestamp || 0}`;
       const response = await fetch(url);
       return await response.json();
     } catch (e) {
-      return { hasChanges: false }; // Na d˙vida, diz que n„o mudou
+      return { hasChanges: false }; // Na dÔøΩvida, diz que nÔøΩo mudou
     }
+  },
+
+  // --- NOVAS FUNES DO WEB APP ---
+  async getHomeKPIs() {
+    try {
+      const url = `${API_URL}?mobile=true&action=getHomeKPIs`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar KPIs." };
+    }
+  },
+
+  // --- NOVOS M√ìDULOS ---
+  async getMinhasPreventivas() {
+    try {
+      const url = `${API_URL}?mobile=true&action=getMinhasPreventivas`;
+      const response = await fetch(url);
+      const json = await response.json();
+      // Garante um retorno seguro em caso de falha parcial
+      if (json.success) {
+        return { success: true, data: json.data || { tarefas: [], kpis: {} } };
+      }
+      return { success: false, error: json.error || "Erro desconhecido." };
+    } catch (e) {
+      return { success: false, error: "Falha de conex√£o ao buscar preventivas." };
+    }
+  },
+
+  async findEquipamento(termo) {
+    try {
+      const url = `${API_URL}?mobile=true&action=findEquipamento&termo=${encodeURIComponent(termo)}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar equipamento." };
+    }
+  },
+
+  async saveErroOperacao(payload) {
+    return await apiRequest({ action: 'mobileSaveErroOperacao', dados: payload });
+  },
+
+  async getFalhas() {
+    try {
+      const url = `${API_URL}?mobile=true&action=getFalhas`;
+      const response = await fetch(url);
+      const json = await response.json();
+      return json.success ? json.data : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async saveCorretiva(corretivaData) {
+    return await apiRequest({ action: 'mobileSaveCorretiva', payload: { corretivaData } });
+  },
+
+  // --- FOTOS E ANEXOS ---
+  async uploadCorretivaPhoto(fileData) {
+    return await apiRequest({ action: 'mobileUploadCorretivaPhoto', fileObject: fileData });
+  },
+  async addRelatorioToCorretiva(payload) {
+    return await apiRequest({ action: 'addRelatorioToCorretiva', payload });
+  },
+
+  // --- ROTAS DE INSPE√á√ÉO ---
+  async getRotasDoMes(ano, mes) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchRotasDoMes&ano=${ano}&mes=${mes}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar rotas." };
+    }
+  },
+  async salvarExecucaoRotaEmLote(payload) {
+    return await apiRequest({ action: 'salvarExecucaoRotaEmLote', payload });
+  },
+
+  // --- TREINAMENTOS ---
+  async getTreinamentos() {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchTreinamentos`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar treinamentos." };
+    }
+  },
+
+  // --- SEPARA√á√ÉO DE PROTETORES (CQ) ---
+  async getProtetoresParaSeparacao(mes, ano, tecnicoId) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileGetProtetoresParaSeparacao&mes=${mes}&ano=${ano}&tecnicoId=${tecnicoId || ''}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar protetores." };
+    }
+  },
+  async toggleSeparacaoProtetor(payload) {
+    return await apiRequest({ action: 'mobileToggleSeparacaoProtetor', payload });
+  },
+
+  // --- PRESTADORES ---
+  async buscaPrestadorTypeahead(termo) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileBuscaPrestadorTypeahead&termo=${encodeURIComponent(termo)}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar prestadores." };
+    }
+  },
+  async getHistoricoLiberacoes() {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchHistoricoLiberacoes`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar hist√≥rico." };
+    }
+  },
+  async salvarNovoPrestador(dados) {
+    return await apiRequest({ action: 'mobileSalvarNovoPrestador', dados });
+  },
+  async registrarEEmitirLiberacao(dados) {
+    return await apiRequest({ action: 'registrarEEmitirLiberacao', dados });
+  },
+
+  // --- EMPR√âSTIMOS ---
+  async getEmprestimosAtivos() {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchEmprestimosAtivos`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar empr√©stimos." };
+    }
+  },
+  async buscarEquipamentoParaEmprestimo(termo) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileBuscarEquipamentoParaEmprestimo&termo=${encodeURIComponent(termo)}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar equipamento." };
+    }
+  },
+  async buscarEmprestimoParaDevolver(termo) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileBuscarEmprestimoParaDevolver&termo=${encodeURIComponent(termo)}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar empr√©stimo." };
+    }
+  },
+  async saveEmprestimo(dados) {
+    return await apiRequest({ action: 'saveEmprestimo', dados });
+  },
+  async devolverEmprestimo(dados) {
+    return await apiRequest({ action: 'devolverEmprestimo', dados });
+  },
+
+  // --- N√çVEL DE H√âLIO ---
+  async getRMsParaHelio() {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchRMsParaHelio`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar equipamentos de RM." };
+    }
+  },
+  async saveHelioReadings(payload) {
+    return await apiRequest({ action: 'saveHelioReadings', payload });
+  },
+
+  // --- √ìTICAS ---
+  async getOticaForCQ(serial) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchOticaForCQ&serial=${encodeURIComponent(serial)}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar √≥tica." };
+    }
+  },
+  async saveOticaTeste(formData) {
+    return await apiRequest({ action: 'saveOticaTeste', formData });
+  },
+
+  // --- JORNADA / PRODUTIVIDADE ---
+  async getJornadaProdutividade(ano, mes) {
+    try {
+      const url = `${API_URL}?mobile=true&action=mobileFetchJornadaProdutividade&ano=${ano}&mes=${mes}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (e) {
+      return { success: false, error: "Falha ao buscar jornada." };
+    }
+  },
+  async saveJornadaEvent(payload) {
+    return await apiRequest({ action: 'saveJornadaEvent', payload });
+  },
+  async deleteJornadaEvent(id) {
+    return await apiRequest({ action: 'deleteJornadaEvent', id });
+  },
+
+  // --- A√á√ïES DE CHAMADOS ---
+  async transferirChamado(dados) {
+    return await apiRequest({ action: 'mobileTransferirChamado', dados });
+  },
+  async recusarChamado(dados) {
+    return await apiRequest({ action: 'mobileRecusarChamado', dados });
+  },
+  async iniciarApoioTecnico(dados) {
+    return await apiRequest({ action: 'mobileIniciarApoioTecnico', dados });
   }
 };
