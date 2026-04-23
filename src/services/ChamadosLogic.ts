@@ -13,7 +13,7 @@ const CACHE_TIMESTAMP_SERVER = '@Sirius:last_server_timestamp';
 // Configuração da "Campainha Infinita"
 // 60 notificações * 5 segundos = 5 minutos de barulho ininterrupto.
 // O ciclo é reiniciado pelo background fetch ou pela interação do usuário.
-const RING_BATCH_COUNT = 60;
+const RING_BATCH_COUNT = 60; 
 const RING_INTERVAL_SEC = 5;
 
 /**
@@ -112,9 +112,9 @@ export async function verificarEscalonamentoGlobal(forceDownload = false, global
       // Se o chamado é novo E é do meu setor, ele deve tocar.
       // A condição "não notificado" serve apenas para o banner inicial de "Novo Chamado".
       // O "loop" de barulho deve acontecer sempre que o chamado estiver Aberto.
-
+      
       const isNew = !chamadosJaNotificados.includes(chamadoId);
-
+      
       // Se for novo, manda o Banner Principal imediatamente (sem delay)
       if (isNew) {
           await dispararBannerInicial(c);
@@ -204,13 +204,13 @@ async function dispararBannerInicial(chamado: any) {
  */
 async function scheduleRingingBatch(chamado: any, startDelaySeconds: number) {
     const chamadoId = chamado.chamado_id;
-
+    
     for (let i = 0; i < RING_BATCH_COUNT; i++) {
         // Cálculo do tempo: Delay Inicial + (Índice * Intervalo)
         // Ex: Delay 0 -> 0s, 5s, 10s...
         // Ex: Delay 120 -> 120s, 125s, 130s...
         const triggerSeconds = startDelaySeconds + (i * RING_INTERVAL_SEC);
-
+        
         // Se o delay for muito curto (< 1s), o Android pode ignorar, então protegemos.
         // Mas se for 0 e i=0, queremos imediato? Não, o imediato é o Banner.
         // O loop começa um pouco depois para não encavalar o som.
@@ -226,9 +226,9 @@ async function scheduleRingingBatch(chamado: any, startDelaySeconds: number) {
                 priority: Notifications.AndroidNotificationPriority.HIGH,
                 vibrate: [0, 500, 200, 500], // Vibração forte
             },
-            trigger: {
-                seconds: safeSeconds,
-                channelId: 'campainha_v2'
+            trigger: { 
+                seconds: safeSeconds, 
+                channelId: 'campainha_v2' 
             },
         });
     }
