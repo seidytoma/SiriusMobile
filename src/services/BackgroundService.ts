@@ -1,4 +1,4 @@
-﻿// src/services/BackgroundService.ts
+// src/services/BackgroundService.ts
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { verificarEscalonamentoGlobal } from './ChamadosLogic';
