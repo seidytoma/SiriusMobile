@@ -1,0 +1,2938 @@
+<script>
+
+
+// =================================================================
+// PROJETO SIRIUS - JAVASCRIPT PRINCIPAL (javascript.html)
+// =================================================================
+
+// --- TRADUÇÃO E CONFIGURAÇÃO MESTRA ---
+const DATATABLES_PT_BR = {
+    "sEmptyTable": "Nenhum registro encontrado",
+    "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+    "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
+    "sInfoFiltered": "(Filtrados de _MAX_ registros)",
+    "sLengthMenu": "_MENU_ resultados por página",
+    "sLoadingRecords": "Carregando...", "sProcessing": "Processando...",
+    "sZeroRecords": "Nenhum registro encontrado", "sSearch": "Pesquisar",
+    "oPaginate": { "sNext": "Próximo", "sPrevious": "Anterior", "sFirst": "Primeiro", "sLast": "Último" },
+    "oAria": { "sSortAscending": ": Ordenar colunas de forma ascendente", "sSortDescending": ": Ordenar colunas de forma descendente" }
+};
+
+// --- CONFIGURAÇÃO GLOBAL DO DATATABLES ---
+// Isso aplica a regra para TODAS as tabelas criadas a partir de agora
+$.extend(true, $.fn.dataTable.defaults, {
+    language: DATATABLES_PT_BR,
+    pageLength: 10, // Padrão inicial
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]] // Opções do dropdown
+});
+
+
+// --- VARIÁVEIS GLOBAIS ---
+let currentEntity = '';
+let dataTable;
+let formModal, confirmModal, detailsModal, abrirChamadoModal, encerrarModal, corretivaModal, servicoModal, paradaModal, preventivaModal, itensChecklistModal, itemChecklistFormModal, preventivaServicoModal, cartaSaidaModal, unifiedErroOperacaoModal, estoqueModal, servicoContratoModal, tratativaEditModal, alertaModal, uploadCartaModal;
+let preventivaHistoryModal;
+let dropdownData = {};
+let recordIdToHighlight = null;
+let userProfile = {};
+let isFormReadyForSubmit = false;
+// --- VARIÁVEIS CENTRALIZADAS ---
+let panelUpdateInterval;
+let autoRefreshInterval;
+let currentCorretivaDetails = null;
+let isCorretivaModalDirty = false; // <-- Adicionar esta linha
+let forceModalClose = false; // <-- Adicionar esta linha
+
+
+// --- INICIALIZAÇÃO ---
+
+// --- FUNÇÕES AUXILIARES DE RENDERIZAÇÃO ---
+
+/**
+ * Inicializador Global Inteligente para Select2.
+ * Detecta automaticamente se o elemento está dentro de um modal e ajusta o 'dropdownParent'.
+ * Isso corrige o problema de rolagem e posicionamento.
+ * * @param {string|jQuery} selector - O seletor do elemento (ex: '#meu-select', '.classe-select')
+ * @param {object} options - Opções extras do Select2 (opcional)
+ */
+function initSelect2(selector, options = {}) {
+    const element = $(selector);
+    
+    element.each(function() {
+        const $this = $(this);
+        
+        // Configurações padrão
+        let defaults = {
+            width: '100%',
+            dropdownAutoWidth: true,
+            placeholder: 'Selecione...',
+            allowClear: true,
+            language: "pt-BR"
+        };
+
+        // --- A MÁGICA ACONTECE AQUI ---
+        // Verifica se o select está dentro de um modal
+        const parentModal = $this.closest('.modal');
+        
+        if (parentModal.length > 0) {
+            // Se estiver em um modal, anexa o dropdown ao CONTEÚDO do modal, não ao body.
+            // Isso faz a lista acompanhar a rolagem do modal e respeitar o z-index dele.
+            defaults.dropdownParent = parentModal.find('.modal-content');
+        } else {
+            // Se estiver na tela principal (filtros), anexa ao body (padrão)
+            defaults.dropdownParent = $('body');
+        }
+        // -----------------------------
+
+        // Mescla opções
+        const finalOptions = { ...defaults, ...options };
+
+        // Destrói instância anterior se existir para evitar bugs de recarga
+        if ($this.hasClass("select2-hidden-accessible")) {
+            $this.select2('destroy');
+        }
+
+        $this.select2(finalOptions);
+    });
+}
+
+/**
+ * [FIX DE NAVEGAÇÃO] Reseta o container de tabela para o estado "virgem".
+ * Remove estilos inline, classes de layout e restaura a estrutura padrão.
+ */
+function resetTableViewContainer() {
+    const container = $('#table-view');
+    
+    // 1. Destrói instância DataTables existente para evitar conflitos de memória e DOM
+    if ($.fn.DataTable.isDataTable('#main-table')) {
+        $('#main-table').DataTable().destroy();
+    }
+
+    // 2. [CRÍTICO] Remove estilos inline deixados por módulos complexos (Corretivas, Reports)
+    // Isso remove 'display: flex', 'height', 'overflow' etc.
+    container.attr('style', ''); 
+
+    // 3. Remove classes utilitárias de layout que possam ter sido adicionadas
+    container.removeClass('d-flex flex-column h-100 overflow-hidden');
+
+    // 4. Reconstrói o HTML padrão (Card + Tabela Limpa)
+    container.html(`
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div id="table-cards-container" class="row mb-3" style="display: none;"></div>
+                        <hr id="table-cards-divider" style="display: none;">
+                        
+                        <div class="table-responsive">
+                            <table id="main-table" class="table table-hover" style="width:100%">
+                                <tfoot><tr></tr></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+    // 5. Esconde o container (quem for usar, dá .show() depois)
+    container.hide();
+    
+    // 6. Garante que outros containers principais também estejam ocultos
+    // Isso evita o erro de "conteúdo fantasma" de outros módulos
+    $('.main-view').not('#table-view').hide();
+}
+
+/**
+ * VERSÃO 2 (ROBUSTA): Formata uma string de data, lidando tanto com o formato ISO
+ * quanto com o formato brasileiro (DD/MM/YYYY HH:mm:ss).
+ * @param {string} dateString A data vinda do backend.
+ * @returns {string} A data formatada ou uma string vazia.
+ */
+function formatDate(dateString) {
+    if (!dateString) return '';
+
+    let date;
+    // Verifica se a data está no formato brasileiro (contém / e :)
+    if (typeof dateString === 'string' && dateString.includes('/') && dateString.includes(':')) {
+        const parts = dateString.split(' ');
+        const dateParts = parts[0].split('/');
+        const timeParts = parts[1].split(':');
+        // Formato esperado: new Date(ano, mês - 1, dia, hora, minuto, segundo)
+        date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2] || 0);
+    } else {
+        // Se não, tenta o método padrão que funciona para formatos ISO
+        date = new Date(dateString);
+    }
+
+    // Se após a tentativa a data ainda for inválida, retorna uma indicação.
+    if (isNaN(date.getTime())) {
+        return 'Data Inválida';
+    }
+
+    return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+
+
+/**
+ * VERSÃO BLINDADA: Formata datas aceitando ISO, Objetos Date e Strings BR (DD/MM/YYYY).
+ * Resolve o problema de datas antigas não aparecerem na tabela.
+ */
+function formatDateSimple(data) {
+    if (!data || data === '') return '';
+
+    // Se já for um objeto Date
+    if (data instanceof Date) return data.toLocaleDateString('pt-BR');
+
+    const str = String(data).trim();
+
+    // TENTATIVA 1: Verifica se já está no formato BR (DD/MM/YYYY...)
+    // Captura os 10 primeiros caracteres se seguirem o padrão ##/##/####
+    const matchBR = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (matchBR) {
+        // Retorna exatamente o que encontrou (DD/MM/YYYY), ignorando a hora se houver
+        return `${matchBR[1]}/${matchBR[2]}/${matchBR[3]}`;
+    }
+
+    // TENTATIVA 2: Verifica se é formato ISO (YYYY-MM-DD...)
+    const matchISO = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (matchISO) {
+         // Converte para BR
+         return `${matchISO[3]}/${matchISO[2]}/${matchISO[1]}`;
+    }
+
+    // TENTATIVA 3: O JavaScript tenta entender nativamente
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+        // Ajusta fuso horário para não mostrar dia anterior (comum em conversão ISO)
+        const userTimezoneOffset = d.getTimezoneOffset() * 60000;
+        const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
+        return adjustedDate.toLocaleDateString('pt-BR');
+    }
+
+    // FALLBACK: Se não entendeu, retorna o dado original em vez de vazio
+    // (Melhor mostrar "24/10/25 10:00" do que nada)
+    return str;
+}
+
+
+let functionRegistry = {
+    // --- FUNÇÕES DE FORMATAÇÃO DE DADOS ---
+    'formatDate': formatDate,
+    'formatDateSimple': formatDateSimple, // <-- Agora é uma referência à função global
+    'formatDateSimpleWithDefault': function(data) {
+        // Retorna '---' se a data for nula, indefinida, ou string vazia
+        if (!data || typeof data !== 'string' || data.trim() === '') return '---';
+
+        let dateObj = null;
+        const dateString = data.trim(); // Remove espaços extras
+
+        // Tenta interpretar como DD/MM/YYYY (comum de getDisplayValues)
+        const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})/;
+        const match = dateString.match(dateRegex);
+
+        if (match) {
+            // Encontrou DD/MM/YYYY
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // Mês é base 0 no JS Date
+            const year = parseInt(match[3], 10);
+            // Cria a data usando UTC para evitar problemas de fuso horário na conversão
+            dateObj = new Date(Date.UTC(year, month, day));
+        } else {
+            // Se não for DD/MM/YYYY, tenta o parse padrão (para ISO 8601, etc.)
+            dateObj = new Date(dateString);
+        }
+
+        // Verifica se o objeto Date resultante é válido
+        if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+            // Formata a data válida como DD/MM/YYYY usando partes UTC
+            const year = dateObj.getUTCFullYear();
+            const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0'); // +1 porque getUTCMonth é base 0
+            const day = String(dateObj.getUTCDate()).padStart(2, '0');
+            return `${day}/${month}/${year}`;
+        } else {
+            // Se ainda assim for inválida, loga e retorna 'Inválido'
+            console.warn("formatDateSimpleWithDefault falhou ao interpretar a data:", data);
+            return 'Inválido'; // Mais amigável que "Invalid Date"
+        }
+    },
+    'formatCurrency': function(data) {
+        const value = parseFloat(data);
+        if (isNaN(value)) return 'R$ 0,00';
+        return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    },
+
+    // --- FUNÇÕES DE RENDERIZAÇÃO DE BADGES E INDICADORES ---
+    
+    
+    
+    'renderActiveInactiveBadge': function(data) {
+        if (data === 'Ativo') {
+            return '<span class="badge bg-success">Ativo</span>';
+        } else if (data === 'Inativo') {
+            return '<span class="badge bg-danger">Inativo</span>';
+        }
+        return data || ''; // Retorna o dado original ou vazio se não casar
+    },
+    'renderServiceType': function(data) { // Para tipo de serviço (Interno/Contratado)
+        if (data === 'Sim') {
+            return `<span class="service-type-indicator service-contracted">Contratado</span>`;
+        }
+        // Trata explicitamente "Não" e qualquer outro valor (como vazio) como "Interno"
+        return `<span class="service-type-indicator service-internal">Interno</span>`;
+    },
+    
+    
+    // --- FUNÇÕES DE INICIALIZAÇÃO DE TABELA ---
+    'initColumnFilters': function() {
+        this.api().columns().every(function () {
+            var column = this;
+            var header = $(column.header());
+            if (!header.hasClass('no-filter')) {
+                var input = $('<input type="text" class="form-control form-control-sm" placeholder="Filtrar..." />')
+                    .appendTo($(column.footer()).empty())
+                    .on('keyup change clear', function () {
+                        if (column.search() !== this.value) {
+                            column.search(this.value).draw();
+                        }
+                    });
+            }
+        });
+    }
+};
+
+// --- FUNÇÃO DE SEGURANÇA CONTRA XSS ---
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    if (typeof text === 'number') return text; // Números são seguros
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+// =================================================================
+// INÍCIO: CORREÇÕES DE MODAL STACKING (Baseado na análise)
+// =================================================================
+
+/**
+ * [FIX 1 - "Portal"] Move todos os modais para serem filhos diretos do <body>.
+ * Isso resolve problemas de "stacking context" causados por elementos pais (como #main-content)
+ * que tenham 'transform', 'filter', ou 'position: sticky'.
+ */
+function portalModalsToBody() {
+  console.log("[ModalFix] Executando portalModalsToBody...");
+  document.querySelectorAll('.modal').forEach(m => {
+    if (m.parentElement !== document.body) {
+      console.log(`[ModalFix] Movendo modal #${m.id} para o <body>.`);
+      document.body.appendChild(m);
+    }
+  });
+}
+
+/**
+ * [FIX 2 - CSS Runtime] Garante o posicionamento e z-index base.
+ * ATUALIZADO: Inclui correção para o Loader (Swal2) cobrir o Select2.
+ */
+function injectModalFixCSS() {
+  console.log("[ModalFix] Injetando CSS de correção de z-index.");
+  const css = `
+    .modal { 
+      position: fixed !important; 
+    }
+    .modal-backdrop { 
+      z-index: 1050 !important; 
+    }
+    /* Z-index base para modais */
+    .modal { 
+      z-index: 1055 !important; 
+    }
+    
+    /* --- CORREÇÃO DO BUG DO LOADER (NOVO) --- */
+    /* Garante que o SweetAlert (Loader) fique acima de QUALQUER Select2 ou Filtro */
+    .swal2-container {
+      z-index: 99999 !important; 
+    }
+    
+    /* Garante que o dropdown do Select2 fique acima de modais normais, 
+       mas abaixo do Loader (99999) */
+    .select2-container--open {
+      z-index: 1060 !important; 
+    }
+  `;
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
+/**
+ * [CORREÇÃO DEFINITIVA] Gerenciador de Empilhamento de Modais (Z-Index).
+ * Garante que o último modal aberto (e seu backdrop) fiquem sempre no topo.
+ */
+function setupStackingManager() {
+    console.log("[StackingManager] Inicializado.");
+
+    $(document).on('show.bs.modal', '.modal', function () {
+        const zIndexBase = 1050; // Padrão do Bootstrap
+        const increment = 10;    // Quanto subir a cada nível
+        
+        // Conta quantos modais JÁ estão visíveis (excluindo o atual que está abrindo)
+        const visibleModals = $('.modal:visible').length;
+        
+        // Calcula o novo Z-Index
+        const newZIndex = zIndexBase + (visibleModals * increment) + 10;
+        
+        // 1. Aplica o Z-Index no Modal
+        $(this).css('z-index', newZIndex);
+
+        // 2. Aplica o Z-Index no Backdrop correspondente
+        // O Bootstrap cria o backdrop logo após disparar o evento, então usamos setTimeout 0
+        setTimeout(function() {
+            // Pega todos os backdrops
+            const backdrops = $('.modal-backdrop');
+            
+            if (backdrops.length > 0) {
+                // O último backdrop criado é sempre o que pertence ao modal atual
+                const lastBackdrop = backdrops.last();
+                
+                // Aplica z-index um nível abaixo do modal
+                lastBackdrop.css('z-index', newZIndex - 1);
+                lastBackdrop.addClass('managed-stack'); // Marca como gerenciado
+            }
+        }, 0);
+    });
+    
+    // Correção extra: Mantém o scroll do body se fechar um modal filho e sobrar o pai
+    $(document).on('hidden.bs.modal', '.modal', function () {
+        if ($('.modal:visible').length) {
+            $('body').addClass('modal-open');
+        }
+    });
+}
+
+// =================================================================
+// FIM: CORREÇÕES DE MODAL STACKING
+// =================================================================
+
+
+
+
+function DOMContentLoaded() {
+
+
+    // --- INÍCIO DAS CORREÇÕES DE MODAL ---
+    injectModalFixCSS();
+    portalModalsToBody();
+    setupStackingManager();
+    // --- FIM DAS CORREÇÕES DE MODAL ---
+
+    // 1. INICIALIZAÇÃO DOS MODAIS (código inalterado)
+    formModal = new bootstrap.Modal(document.getElementById('formModal'));
+    confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+    abrirChamadoModal = new bootstrap.Modal(document.getElementById('abrirChamadoModal'));
+    encerrarModal = new bootstrap.Modal(document.getElementById('encerrarModal'));
+    corretivaModal = new bootstrap.Modal(document.getElementById('corretivaModal'));
+    servicoModal = new bootstrap.Modal(document.getElementById('servicoModal'));
+    
+    paradaModal = new bootstrap.Modal(document.getElementById('paradaModal'));
+    preventivaModal = new bootstrap.Modal(document.getElementById('preventivaModal'));
+    itensChecklistModal = new bootstrap.Modal(document.getElementById('itensChecklistModal'));
+    itemChecklistFormModal = new bootstrap.Modal(document.getElementById('itemChecklistFormModal'));
+    preventivaServicoModal = new bootstrap.Modal(document.getElementById('preventivaServicoModal'));
+    preventivaHistoryModal = new bootstrap.Modal(document.getElementById('preventivaHistoryModal'));
+    aquisicaoModal = new bootstrap.Modal(document.getElementById('aquisicaoModal')); // <<< Verifique se já existe
+    aquisicaoItemModal = new bootstrap.Modal(document.getElementById('aquisicaoItemModal')); // <<< Verifique se já existe
+    aquisicaoNFModal = new bootstrap.Modal(document.getElementById('aquisicaoNFModal')); // <<< Verifique se já existe
+    rcItemModal = new bootstrap.Modal(document.getElementById('rcItemModal'));
+
+    
+    
+    if (document.getElementById('cartaSaidaModal')) {
+        cartaSaidaModal = new bootstrap.Modal(document.getElementById('cartaSaidaModal'));
+    }
+    // (Adicione aqui a inicialização de qualquer outro modal que você tenha criado, como unifiedChecklistModal, etc.)
+    if (document.getElementById('unifiedChecklistModal')) {
+        unifiedChecklistModal = new bootstrap.Modal(document.getElementById('unifiedChecklistModal'));
+    }
+    if (document.getElementById('unifiedErroOperacaoModal')) {
+        unifiedErroOperacaoModal = new bootstrap.Modal(document.getElementById('unifiedErroOperacaoModal'));
+    }
+    if (document.getElementById('estoqueModal')) {
+        estoqueModal = new bootstrap.Modal(document.getElementById('estoqueModal'));
+    }
+    if (document.getElementById('tratativaEditModal')) {
+        tratativaEditModal = new bootstrap.Modal(document.getElementById('tratativaEditModal'));
+    }
+    if (document.getElementById('alertaModal')) {
+        alertaModal = new bootstrap.Modal(document.getElementById('alertaModal'));
+        inputPromptModal = new bootstrap.Modal(document.getElementById('inputPromptModal'));
+        $('#formInputPrompt').on('submit', handleInputPromptSubmit);
+    }
+    // --- Lógica para Efeito de Foco em Modais Empilhados ---
+    // (Esta lógica de 'modal-behind' pode não ser mais necessária com o Stacking Manager,
+    // mas pode manter por enquanto, pois não deve conflitar)
+    document.addEventListener('show.bs.modal', function (event) {
+        const visibleModals = document.querySelectorAll('.modal.show');
+        if (visibleModals.length > 0) {
+            visibleModals.forEach(modal => {
+                modal.classList.add('modal-behind');
+            });
+        }
+    });
+    document.addEventListener('hidden.bs.modal', function (event) {
+        const visibleModals = document.querySelectorAll('.modal.show');
+        if (visibleModals.length > 0) {
+            visibleModals[visibleModals.length - 1].classList.remove('modal-behind');
+        }
+    });
+
+    if (document.getElementById('preventivaHistoryModal')) {
+        preventivaHistoryModal = new bootstrap.Modal(document.getElementById('preventivaHistoryModal'));
+    }
+    
+    
+    if (document.getElementById('justificativaModal')) {
+        justificativaModal = new bootstrap.Modal(document.getElementById('justificativaModal'));
+    }
+
+    if (document.getElementById('entradaAvulsaModal')) {
+        entradaAvulsaModal = new bootstrap.Modal(document.getElementById('entradaAvulsaModal'));
+    }
+
+    if (document.getElementById('uploadCartaModal')) {
+        uploadCartaModal = new bootstrap.Modal(document.getElementById('uploadCartaModal'));
+    }
+
+
+    // --- 2. NOVA LÓGICA DE CARREGAMENTO PARALELO ---
+    showSystemBootLoader();
+
+    let profileLoaded = false;
+    let dropdownsLoaded = false;
+
+    function finishLoading() {
+        if (profileLoaded && dropdownsLoaded) {
+            updateLoaderMessage("Renderizando interface...");
+            
+            // --- CHAVE MESTRA DO TOTEM ---
+            if (checkKioskMode()) {
+                $('body').addClass('app-loaded'); // <--- CORREÇÃO: Remove a capa de invisibilidade!
+                setTimeout(() => showLoader(false), 300);
+                return; // Aborta a renderização da interface padrão!
+            }
+            // -----------------------------
+
+            initializeAppUI(); // Renderiza a UI final
+            
+            // ---> ESTA É A MÁGICA QUE FALTAVA <---
+            // Dispara a busca dos vídeos em segundo plano assim que a tela abre!
+            if (typeof fetchTutoriaisInBackground === 'function') {
+                fetchTutoriaisInBackground(); 
+            }
+            
+            setTimeout(() => showLoader(false), 300); 
+        }
+    }
+
+    // 2.1. Dispara a chamada para buscar o perfil do usuário
+    updateLoaderMessage("Verificando perfil de acesso...");
+    google.script.run
+        .withSuccessHandler(profile => {
+            if (profile.error) {
+                showToast('Erro crítico ao carregar perfil: ' + profile.error, 'danger');
+                showLoader(false);
+                return;
+            }
+            userProfile = profile;
+            profileLoaded = true;
+            finishLoading(); // Verifica se a outra chamada já terminou
+        })
+        .withFailureHandler(handleServerError)
+        .getUserProfile();
+
+    // 2.2. Dispara a chamada para buscar todos os dados de dropdowns AO MESMO TEMPO
+    updateLoaderMessage("Sincronizando cadastros de apoio...");
+    google.script.run
+        .withSuccessHandler(data => {
+            if (data.error) {
+                showToast('Erro ao carregar dados de apoio: ' + data.error, 'danger');
+            }
+            dropdownData = data;
+            dropdownsLoaded = true;
+            finishLoading(); // Verifica se a outra chamada já terminou
+        })
+        .withFailureHandler(handleServerError)
+        .getAllDropdownData();
+    // --- FIM DA NOVA LÓGICA ---
+
+
+    // --- 3. LISTENERS DE EVENTOS GLOBAIS (código inalterado) ---
+    $('#mainForm').on('submit', handleFormSubmit);
+
+    // Lógica da Sidebar
+    let isSidebarPinned = localStorage.getItem('sidebarPinned') === 'true';
+    const updateSidebarState = () => {
+        $('#sidebar').toggleClass('expanded', isSidebarPinned);
+        localStorage.setItem('sidebarPinned', isSidebarPinned);
+    };
+    $('#sidebarToggleBtn').on('click', () => {
+        isSidebarPinned = !isSidebarPinned;
+        updateSidebarState();
+    });
+    $('#sidebar').on('mouseenter', () => {
+        if (!isSidebarPinned) $('#sidebar').addClass('expanded');
+    }).on('mouseleave', () => {
+        if (!isSidebarPinned) $('#sidebar').removeClass('expanded');
+    });
+    updateSidebarState(); // Define o estado inicial
+
+    // Navegação (Corrigida para evitar ocultar conteúdo ao clicar em menus expansíveis)
+    $('#sidebar .components').on('click', 'a', function(e) {
+        const entity = $(this).data('entity');
+        if (!entity) {
+            // Se não tem entidade (é um pai como 'Cadastro'), apenas deixa o Bootstrap tratar o colapso
+            return; 
+        }
+        e.preventDefault();
+        navigateTo(entity);
+    });
+
+    // --- PERSISTÊNCIA DE ABAS ---
+    // Sempre que clicar em uma aba, salva o ID dela vinculado ao módulo atual
+    $('body').on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function (e) {
+        if (!currentEntity) return;
+        const tabId = $(e.target).attr('id');
+        // Salva algo como: "sirius_tab_EQUIPAMENTOS_OP" = "nav-ips-tab"
+        localStorage.setItem(`sirius_tab_${currentEntity}`, tabId);
+    });
+  
+
+    
+
+    // Prevenção do Enter em formulários
+    $('#mainForm').on('keydown', 'input', function(e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Limpeza de Select2 ao fechar modal
+    document.getElementById('formModal').addEventListener('hidden.bs.modal', function() {
+        if ($('.select2-hidden-accessible').length) {
+            $('.select2-hidden-accessible').select2('destroy');
+        }
+    });
+
+    // Lógica de Drag and Drop
+    $(document).on('dragstart', '#main-table tbody tr', function(e) {
+        const config = ENTITY_CONFIG[currentEntity];
+        if (!config || !config.statusUpdateFunction) return;
+        const rowData = dataTable.row(this).data();
+        const recordId = rowData ? rowData[config.idField] : null;
+        if (recordId) {
+            e.originalEvent.dataTransfer.setData('text/plain', recordId);
+            $(this).addClass('dragging-row');
+        } else {
+            return false;
+        }
+    });
+    $(document).on('dragend', '#main-table tbody tr', function(e) {
+        $(this).removeClass('dragging-row');
+    });
+    $(document).on('dragover', '#stats-cards-container .stat-card', function(e) {
+        const config = ENTITY_CONFIG[currentEntity];
+        if (!config || !config.statusUpdateFunction) return;
+        e.preventDefault();
+        $(this).addClass('drop-target-hover');
+    });
+    $(document).on('dragleave', '#stats-cards-container .stat-card', function(e) {
+        $(this).removeClass('drop-target-hover');
+    });
+    $(document).on('drop', '#stats-cards-container .stat-card', function(e) {
+        const config = ENTITY_CONFIG[currentEntity];
+        if (!config || !config.statusUpdateFunction) return;
+        e.preventDefault();
+        $(this).removeClass('drop-target-hover');
+        const recordId = e.originalEvent.dataTransfer.getData('text/plain');
+        const newStatusDesc = $(this).data('status');
+        if (newStatusDesc === 'Todos') return;
+        const statusList = dropdownData[config.statusDropdownSource] || [];
+        const statusInfo = statusList.find(s => s.text === newStatusDesc);
+        if (recordId && statusInfo && statusInfo.id) {
+            showLoader(true);
+            const serverFunction = config.statusUpdateFunction;
+            const spreadsheetId = config.spreadsheetId;
+            google.script.run
+                .withSuccessHandler(res => {
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        if (config.customRenderer && typeof window[config.customRenderer] === 'function') {
+                            window[config.customRenderer]();
+                        } else {
+                            loadDataTable();
+                        }
+                    } else {
+                        showToast(res.error, 'danger');
+                        showLoader(false);
+                    }
+                })
+                .withFailureHandler(handleServerError)
+                [serverFunction](recordId, statusInfo.id, spreadsheetId);
+        }
+    });
+
+    // Listener unificado para os cards de filtro
+    $(document).on('click', '#stats-cards-container .stat-card', function() {
+        if ($(this).hasClass('non-clickable')) return;
+        const clickedCard = $(this);
+        let statusColIndex, backupColIndex, statusToFilter, backupToFilter;
+
+        $('#stats-cards-container .stat-card').removeClass('active');
+        clickedCard.addClass('active');
+
+        const config = ENTITY_CONFIG[currentEntity];
+        if (!dataTable || !config) return;
+
+        // Lógica de filtro para tabelas server-side (Equipamentos)
+        if (dataTable.settings()[0].oFeatures.bServerSide) {
+             const statusToFilter = clickedCard.data('status');
+
+             // Armazena o filtro para a próxima requisição AJAX
+             if (currentEntity === 'CORRETIVAS') {
+                 currentCorretivaStatusFilter = (statusToFilter === 'Todos' || statusToFilter === undefined) ? '' : statusToFilter;
+                 console.log("Filtro de Status Corretiva definido para:", currentCorretivaStatusFilter);
+                 dataTable.ajax.reload(); // Recarrega os dados do servidor com o novo filtro
+             } else {
+                 // Mantém a lógica antiga para outras tabelas Server-Side (como Equipamentos, se houver)
+                 dataTable.search(statusToFilter || '').draw();
+             }
+        } 
+        // Lógica de filtro para tabelas client-side (demais)
+        else {
+            statusToFilter = clickedCard.data('status');
+            const statusColumn = dataTable.columns().header().toArray().findIndex(th => $(th).text() === 'Status');
+            if(statusColumn > -1) {
+                if (statusToFilter === 'Todos' || statusToFilter === undefined) {
+                    dataTable.column(statusColumn).search('').draw();
+                } else {
+                    dataTable.column(statusColumn).search('^' + statusToFilter + '$', true, false).draw();
+                }
+            }
+        }
+    });
+
+    
+
+    
+
+    
+
+}
+document.addEventListener("DOMContentLoaded", DOMContentLoaded);
+
+// --- FUNÇÕES GLOBAIS DE FEEDBACK E UI ---
+
+/**
+ * Loader Global Moderno (Versão Compatível)
+ */
+function showLoader(isLoading, message = "Processando...") {
+    if (typeof Swal === 'undefined') return;
+
+    if (isLoading) {
+        Swal.fire({
+            title: message,
+            html: 'Aguarde um momento...',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+    } else {
+        // CORREÇÃO: Só fecha o alerta se não houver um timer rodando.
+        // Isso impede que a tela de carregamento "esmague" o Toast de Sucesso.
+        if (Swal.getTimerLeft() === undefined) {
+            Swal.close();
+        }
+    }
+}
+
+/**
+ * Loader Inicial do Sistema (Boot Sequence Animado)
+ * Exibe mensagens dinâmicas com Spinner visível.
+ */
+function showSystemBootLoader() {
+    const steps = [
+        { title: "Bem-vindo ao Sirius! 🚀", text: "Iniciando protocolos de segurança..." },
+        { title: "Conectando... 📡", text: "Estabelecendo conexão com o servidor..." },
+        { title: "Autenticando... 🔐", text: "Verificando permissões de acesso..." },
+        { title: "Carregando Módulos... 📦", text: "Sincronizando banco de dados..." },
+        { title: "Quase pronto! ✨", text: "Preparando sua visualização..." }
+    ];
+
+    let currentStep = 0;
+
+    // Spinner HTML (Bootstrap) - Grande e Azul
+    const spinnerHtml = `
+        <div class="my-3">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    `;
+
+    Swal.fire({
+        title: steps[0].title,
+        // Injetamos o texto + o spinner manualmente
+        html: `<div class="mt-2 text-muted fw-bold">${steps[0].text}</div>${spinnerHtml}`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false, // Sem botão OK
+        backdrop: `rgba(0,0,0,0.9)`, // Fundo escuro
+        didOpen: () => {
+            // Removido Swal.showLoading() pois estamos usando nosso próprio spinner
+            
+            const interval = setInterval(() => {
+                currentStep++;
+                if (currentStep < steps.length) {
+                    Swal.update({
+                        title: steps[currentStep].title,
+                        // Mantemos o spinner ao atualizar o texto
+                        html: `<div class="mt-2 text-muted fw-bold">${steps[currentStep].text}</div>${spinnerHtml}`
+                    });
+                }
+            }, 1500); // Troca a cada 1.5s
+            
+            Swal.getPopup().dataset.bootInterval = interval;
+        },
+        willClose: () => {
+            const interval = Swal.getPopup()?.dataset.bootInterval;
+            if (interval) clearInterval(interval);
+        }
+    });
+}
+
+/**
+ * Renderiza uma barra de progresso elegante dentro de um container específico.
+ * Use isso para gráficos e tabelas ao invés de travar a tela toda.
+ */
+function showElementLoader(selector, message = "Carregando dados...") {
+    const loaderHtml = `
+        <div class="d-flex flex-column align-items-center justify-content-center h-100 p-4 text-muted">
+            <div class="progress w-75 mb-2" style="height: 6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+            </div>
+            <small class="fw-bold text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">${message}</small>
+        </div>
+    `;
+    $(selector).html(loaderHtml);
+}
+
+/**
+ * Atualiza o texto exibido na tela de carregamento.
+ * @param {string} message A nova mensagem a ser exibida.
+ */
+function updateLoaderMessage(message) {
+    $('#loader-message').text(message);
+}
+
+/**
+ * Exibe notificações modernas usando SweetAlert2.
+ * Com tempo inteligente: Rápido para sucesso, Lento para erros.
+ */
+function showToast(message, type = 'success') {
+    let swalIcon = type;
+    let titleText = 'Sucesso!';
+    
+    // Define o tempo baseado no tipo
+    // Sucesso = 1500ms (1.5s) | Erro/Aviso = 4000ms (4s)
+    let timerDuration = (type === 'success') ? 1500 : 4000;
+
+    if (type === 'danger') {
+        swalIcon = 'error';
+        titleText = 'Erro!';
+    } else if (type === 'warning') {
+        swalIcon = 'warning';
+        titleText = 'Atenção';
+    } else if (type === 'info') {
+        swalIcon = 'info';
+        titleText = 'Informação';
+    }
+
+    Swal.fire({
+        icon: swalIcon,
+        title: titleText,
+        html: message,
+        position: 'center',
+        showConfirmButton: false,
+        timer: timerDuration, // <--- Tempo dinâmico aqui
+        timerProgressBar: true,
+        backdrop: `rgba(0,0,123,0.1)`,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+}
+
+/**
+ * Exibe um modal de confirmação (Sim/Não) com correção de sobreposição (Z-Index).
+ * Garante que apareça na frente de qualquer outro modal aberto.
+ */
+function showConfirm(message, yesCallback, noCallback) {
+    // 1. Remove modal anterior se existir (limpeza)
+    $('#confirmModal').remove();
+
+    // 2. Cria o HTML do modal dinamicamente
+    const modalHtml = `
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 400px;">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-white border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">Confirmação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4 text-center">
+                    <p class="mb-0 fs-5 text-secondary">${message}</p>
+                </div>
+                <div class="modal-footer border-top-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-secondary px-4 me-2" data-bs-dismiss="modal" id="btnConfirmNo">Cancelar</button>
+                    <button type="button" class="btn btn-primary px-4" id="btnConfirmYes">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    // 3. Adiciona ao corpo do documento
+    $('body').append(modalHtml);
+
+    // 4. Configura e mostra o modal
+    const modalElement = document.getElementById('confirmModal');
+    const modal = new bootstrap.Modal(modalElement, { backdrop: 'static', keyboard: false });
+
+    // --- CORREÇÃO DE Z-INDEX (CAMADAS) ---
+    // Verifica qual é o maior z-index atual entre os modais abertos
+    let highestZ = 1050; // Padrão Bootstrap
+    $('.modal.show').each(function() {
+        const z = parseInt($(this).css('z-index')) || 1050;
+        if (z > highestZ) highestZ = z;
+    });
+
+    // Define o z-index deste modal para ser maior que o maior encontrado
+    const newZIndex = highestZ + 20; 
+    $(modalElement).css('z-index', newZIndex);
+
+    // Mostra o modal
+    modal.show();
+
+    // Ajusta o backdrop (fundo escuro) para ficar logo abaixo deste modal
+    setTimeout(() => {
+        const backdrops = $('.modal-backdrop');
+        if (backdrops.length > 0) {
+            // Pega o último backdrop criado (o deste modal) e sobe o nível dele
+            $(backdrops[backdrops.length - 1]).css('z-index', newZIndex - 10);
+        }
+    }, 50); // Pequeno delay para garantir que o Bootstrap criou o backdrop
+
+    // 5. Configura os Listeners dos botões
+    $('#btnConfirmYes').off('click').on('click', function () {
+        modal.hide();
+        if (typeof yesCallback === 'function') yesCallback();
+    });
+
+    $('#btnConfirmNo').off('click').on('click', function () {
+        // Apenas fecha (o hide já trata)
+        if (typeof noCallback === 'function') noCallback();
+    });
+}
+
+/**
+ * Função BLINDADA para chamadas ao servidor com Auto-Retry (Fila de Espera).
+ * Se der erro 429, ela espera e tenta de novo automaticamente até 3 vezes.
+ */
+function executeBackendWithRetry(funcName, args, onSuccess, onError, attempt = 1) {
+    google.script.run
+        .withSuccessHandler(onSuccess)
+        .withFailureHandler(error => {
+            const msg = (error.message || String(error));
+            
+            // Verifica se é erro de muitas requisições (429) ou erro de rede genérico
+            if ((msg.includes('429') || msg.includes('NetworkError') || msg.includes('Exceeded maximum execution')) && attempt <= 3) {
+                
+                // Calcula tempo de espera progressivo: 3s, 6s, 9s...
+                const delay = attempt * 3000; 
+                
+                // Atualiza a mensagem do Loader para o usuário saber que o sistema está trabalhando
+                updateLoaderMessage(`Servidor ocupado. Retentando automaticamente (${attempt}/3) em ${delay/1000}s...`);
+                console.warn(`[Auto-Retry] Tentativa ${attempt} falhou com 429. Retentando em ${delay}ms...`);
+
+                // Reconecta após o delay sem o usuário precisar fazer nada
+                setTimeout(() => {
+                    executeBackendWithRetry(funcName, args, onSuccess, onError, attempt + 1);
+                }, delay);
+                
+            } else {
+                // Se for outro erro (lógica) ou excedeu tentativas, passa para o erro real
+                onError(error);
+            }
+        })
+        [funcName](...args); // Executa a função dinamicamente com os argumentos
+}
+function handleServerError(error) {
+    showLoader(false);
+    
+    let errorMessage = "Erro desconhecido";
+    if (error) {
+        errorMessage = error.message || String(error);
+    }
+
+    console.error("handleServerError capturou:", errorMessage);
+
+    // TRATAMENTO ESPECÍFICO PARA ERRO 429 (Muitas Requisições) ou Timeout
+    if (errorMessage.includes("429") || errorMessage.includes("NetworkError") || errorMessage.includes("Exceeded maximum execution")) {
+        
+        // Se já estivermos recarregando, não faz nada para evitar loops visuais
+        if (window.isReloading) return;
+        window.isReloading = true;
+
+        // Feedback visual claro
+        const toastMsg = `
+            <div class="d-flex flex-column">
+                <strong>⚠️ Sistema sobrecarregado (Erro 429)</strong>
+                <span>Reiniciando conexão em <span id="retry-countdown">5</span> segundos...</span>
+                <div class="progress mt-2" style="height: 3px;">
+                    <div class="progress-bar bg-warning" id="retry-progress" style="width: 100%; transition: width 5s linear;"></div>
+                </div>
+            </div>
+        `;
+        showToast(toastMsg, 'warning');
+
+        // Animação da barra de progresso
+        setTimeout(() => {
+            const bar = document.getElementById('retry-progress');
+            if(bar) bar.style.width = '0%';
+        }, 100);
+
+        // Contador regressivo visual
+        let seconds = 5;
+        const interval = setInterval(() => {
+            seconds--;
+            const counterEl = document.getElementById('retry-countdown');
+            if(counterEl) counterEl.innerText = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(interval);
+                // RECARREGA A PÁGINA DE VERDADE
+                window.location.reload();
+            }
+        }, 1000);
+
+        return; // Sai da função para não mostrar o erro vermelho genérico
+    }
+
+    // Erros normais (Lógica de negócio, validação, etc)
+    showToast('Erro de comunicação com o servidor: ' + errorMessage, 'danger');
+
+    // Reativa botões de submit
+    $('button[type="submit"]').prop('disabled', false).html('Salvar');
+    isFormReadyForSubmit = true;
+}
+
+
+/**
+ * VERSÃO TURBO: Popula um select manipulando o HTML em memória.
+ * Aumenta drasticamente a performance em listas grandes (de 5s para 0.1s).
+ */
+function populateSelectWithOptions(selectElement, options, valueField, textField, selectedValue = null) {
+    const el = (typeof selectElement === 'string') ? $(`#${selectElement}`) : $(selectElement);
+    
+    // Constrói todo o HTML em uma única string gigante (Array Join é mais rápido que concatenação)
+    const htmlParts = ['<option value="">Selecione...</option>'];
+    
+    if (options && Array.isArray(options)) {
+        // Previne erros se os campos não existirem
+        const vField = valueField || 'id';
+        const tField = textField || 'text';
+        
+        for (let i = 0, len = options.length; i < len; i++) {
+            const opt = options[i];
+            const val = opt[vField];
+            const text = opt[tField];
+            htmlParts.push(`<option value="${val}">${text}</option>`);
+        }
+    }
+    
+    // Toca no DOM apenas UMA vez
+    el.html(htmlParts.join(''));
+    
+    // Define o valor selecionado, se houver
+    if (selectedValue !== null && selectedValue !== undefined) {
+        el.val(selectedValue);
+    }
+}
+
+/**
+ * Configura um campo select para usar Select2 com busca AJAX no backend.
+ * @param {string} selector - O seletor jQuery para o elemento <select>.
+ * @param {string} entity - A chave da entidade em ENTITY_CONFIG (ex: 'EQUIPAMENTOS').
+ * @param {string} placeholder - O texto de placeholder para o campo.
+ */
+function setupAjaxSelect2(selector, entity, placeholder) {
+    const config = ENTITY_CONFIG[entity];
+    if (!config) {
+        console.error(`Configuração para a entidade '${entity}' não encontrada.`);
+        return;
+    }
+    
+    $(selector).select2({
+        dropdownParent: $(selector).closest('.modal-content'),
+        width: '100%',
+        placeholder: placeholder,
+        minimumInputLength: 2,
+        ajax: {
+            delay: 800,
+            transport: function(params, success, failure) {
+                google.script.run
+                    .withSuccessHandler(success)
+                    .withFailureHandler(failure)
+                    .getDropdownOptions({
+                        source: config.sheetName,
+                        term: params.data.term,
+                        spreadsheetId: config.spreadsheetId
+                    });
+            },
+            processResults: function(data) {
+                return { results: data.results || [] };
+            },
+            cache: true
+        }
+    });
+}
+
+/**
+ * Busca APENAS as fontes de dados de dropdown especificadas e as atualiza na variável global.
+ * @param {string[]} sourceKeys - Um array com as chaves das fontes a serem atualizadas (ex: ['fabricantes']).
+ * @param {function} callback - A função a ser executada após a atualização bem-sucedida.
+ */
+function refreshDropdownData(sourceKeys, callback) {
+    if (!sourceKeys || sourceKeys.length === 0) {
+        if (callback) callback();
+        return;
+    }
+
+    let completed = 0;
+    sourceKeys.forEach(key => {
+        google.script.run
+            .withSuccessHandler(response => {
+                if (response.success) {
+                    // Atualiza cirurgicamente apenas a chave solicitada no objeto global
+                    dropdownData[key] = response.data;
+                    console.log(`Fonte de dados '${key}' atualizada no cliente.`);
+                } else {
+                    showToast(`Falha ao atualizar dados de ${key}: ${response.error}`, 'danger');
+                }
+                
+                completed++;
+                if (completed === sourceKeys.length && callback) {
+                    callback(); // Executa o callback apenas quando todas as fontes forem atualizadas
+                }
+            })
+            .withFailureHandler(handleServerError)
+            .getSingleDropdown(key);
+    });
+}
+
+// --- NAVEGAÇÃO E RENDERIZAÇÃO ---
+function initializeAppUI() {
+    generateSidebarMenu();
+    
+    // Tenta recuperar o último módulo acessado
+    const lastModule = localStorage.getItem('sirius_last_module');
+    
+    // Verifica se existe algo salvo E se o usuário tem permissão para ver (existe no menu)
+    if (lastModule && ENTITY_CONFIG[lastModule]) {
+        // Validação extra de segurança (ex: se um solicitante tentar acessar módulo de técnico via cache)
+        const isTecnico = userProfile.role === 'tecnico';
+        const config = ENTITY_CONFIG[lastModule];
+        
+        if ((isTecnico && config.isTecnicoView) || (!isTecnico && config.isSolicitanteView)) {
+            navigateTo(lastModule);
+            $('body').addClass('app-loaded');
+            return;
+        }
+    }
+
+    // Se não tiver nada salvo ou não tiver permissão, vai para o padrão
+    let initialView = (userProfile.role === 'tecnico') ? 'CHAMADOS_MODULE' : 'CHAMADOS_SOLICITANTE';
+    navigateTo(initialView);
+    $('body').addClass('app-loaded');
+}
+
+function generateSidebarMenu() {
+  const menuUl = document.querySelector('#sidebar .components');
+  let menuHtml = '';
+  const isTecnico = userProfile.role === 'tecnico';
+  const isSolicitante = userProfile.role === 'solicitante';
+
+  SIDEBAR_MENU_CONFIG.forEach(item => {
+    if ((isTecnico && item.isTecnicoView) || (isSolicitante && item.isSolicitanteView)) {
+      if (item.entityKey) {
+        const entity = ENTITY_CONFIG[item.entityKey];
+        
+        const label = item.labelOverride || entity.label;
+        menuHtml += `<li><a href="#" class="nav-link" data-entity="${item.entityKey}"><i class="fas ${entity.icon} fa-fw"></i><span>${label}</span></a></li>`;
+      } else if (item.children) {
+        menuHtml += `
+          <li>
+            <a href="#${item.id}" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+              <i class="fas ${item.icon} fa-fw"></i><span>${item.title}</span>
+            </a>
+            <ul class="collapse list-unstyled" id="${item.id}">`;
+        
+        item.children.forEach(child => {
+          if (child.isDivider) {
+            menuHtml += '<li><hr class="sidebar-divider"></li>';
+          } else {
+            const entity = ENTITY_CONFIG[child.entityKey];
+            if (entity) {
+              
+              const label = child.labelOverride || entity.label;
+              menuHtml += `<li><a href="#" class="nav-link" data-entity="${child.entityKey}"><i class="fas ${entity.icon} fa-fw"></i><span>${label}</span></a></li>`;
+            }
+          }
+        });
+        menuHtml += `</ul></li>`;
+      }
+    }
+  });
+  menuUl.innerHTML = menuHtml;
+}
+
+function navigateTo(entityKey) {
+
+    // --- LIMPEZA GLOBAL ---
+    $('.main-view').hide(); // Esconde todos os containers principais
+    $('#stats-cards-container').empty().hide(); // Limpa e esconde KPIs
+    $('#custom-filters-container').empty().hide(); // Limpa e esconde filtros
+    
+    // Reseta estado do botão de adicionar
+    $('#addNewBtn').hide().off('click');
+    if (!ENTITY_CONFIG[entityKey]) {
+        console.error('ERRO: Configuração para entidade não encontrada. Abortando navegação.');
+        return;
+    }
+    currentEntity = entityKey;
+    const config = ENTITY_CONFIG[entityKey];
+    $('.main-view').hide();
+    $('#stats-cards-container').hide();
+    $('.nav-link').removeClass('active');
+    $(`.nav-link[data-entity="${entityKey}"]`).addClass('active');
+    $('#page-title').text(config.label);
+    clearInterval(panelUpdateInterval);
+    clearInterval(autoRefreshInterval);
+    $('#addNewBtn').hide();
+    switch (entityKey) {
+        case 'COMMANDCENTER':
+            initCommandCenterView();
+            break;
+        case 'CHAMADOS_MODULE':
+            initChamadosModuleWithTabs();
+            break;
+        case 'CHAMADOS_SOLICITANTE':
+            initSolicitanteView();
+            break;
+        case 'CORRETIVAS':
+            initCorretivasView();
+            break;
+        case 'PREVENTIVAS':
+            if (typeof initPreventivasModuleWithTabs === 'function') {
+                initPreventivasModuleWithTabs(); // Chama a nova função que gerencia as abas
+            } else {
+                console.error("Erro: Função initPreventivasModuleWithTabs() não encontrada.");
+                $('#table-view').show().html('<div class="alert alert-danger">Erro ao carregar módulo de preventivas.</div>');
+            }
+            break;
+        case 'EQUIPAMENTOS_OP':
+            initEquipamentosSuperModule();
+            break;
+        case 'DESATIVACOES':
+            initDesativacoesView();
+            break;
+        case 'ROTAS':
+            initRotasView();
+            break;
+        case 'ESTOQUE_PECAS':
+            initEstoqueView();
+            break;
+        case 'TREINAMENTOS':
+            initTreinamentosCatalogView();
+            break;
+        case 'MEUS_TREINAMENTOS':
+            initMeuProgressoView();
+            break;
+        case 'EMPRESTIMOS_MODULE':
+            initEmprestimosView();
+            break;
+        case 'CONSIGNADOS_MODULE':
+            initConsignadosView();
+            break;
+        case 'CARTA_SAIDA':
+            initCartaSaidaView();
+            break;
+        
+        case 'NIVEL_HELIO':
+            initHelioView();
+            break;
+        
+        
+        default:
+            // 1. Verifica se há um renderizador customizado
+            if (config.customRenderer) {
+                const rendererFn = functionRegistry[config.customRenderer] || window[config.customRenderer];
+                if (typeof rendererFn === 'function') {
+                    rendererFn();
+                    break; 
+                }
+            }
+            // 2. Verifica se é uma tabela com inicialização customizada
+            else if (config.customInitFunction && typeof functionRegistry[config.customInitFunction] === 'function') {
+                functionRegistry[config.customInitFunction]();
+            }
+            // 3. Se não for, é um CRUD padrão (Server-Side ou Client-Side)
+            else {
+                // === CORREÇÃO AQUI ===
+                resetTableViewContainer(); // Limpa o HTML customizado de outros módulos
+                $('#page-title').show().text(config.label); // Garante que o título padrão da página apareça
+                // =====================
+
+                if (!config.readOnly) {
+                    $('#addNewBtn').show().html('<i class="fas fa-plus me-2"></i>Adicionar Novo').off('click').on('click', openFormModalForAdd);
+                }
+                
+                $('#table-view').show(); // Mostra o container da tabela genérica
+                loadDataTable(); // Carrega a tabela
+            }
+            break;
+    }
+
+    // Proteção: Só chama se o include do tutoriais.html estiver presente
+    if (typeof checkAndShowTutorialButton === 'function') {
+        checkAndShowTutorialButton();
+    }
+    localStorage.setItem('sirius_last_module', entityKey); // Salva o módulo atual
+    restoreLastTabForModule(entityKey); // Tenta restaurar a aba interna
+}
+
+/**
+ * Tenta restaurar a última aba ativa de um módulo.
+ * Chamada automaticamente no final de navigateTo().
+ */
+function restoreLastTabForModule(entityKey) {
+    const lastTabId = localStorage.getItem(`sirius_tab_${entityKey}`);
+    
+    if (lastTabId) {
+        // Pequeno delay para garantir que o HTML do módulo foi renderizado
+        setTimeout(() => {
+            const tabElement = document.getElementById(lastTabId);
+            if (tabElement) {
+                // Se a aba existe no DOM, clica nela/ativa ela
+                const tabInstance = bootstrap.Tab.getOrCreateInstance(tabElement);
+                tabInstance.show();
+                console.log(`[Sistema] Aba restaurada: ${lastTabId}`);
+            }
+        }, 100); // 100ms é suficiente
+    }
+}
+
+function setupDeactivationFields(formSelector) {
+    if (currentEntity !== 'EQUIPAMENTOS') return;
+    const form = $(formSelector);
+    
+    // Como os campos mudaram de layout, pegamos pela classe do wrapper
+    const deactivationFields = form.find('.deactivation-field');
+    
+    // Verifica o valor do input (que agora é texto readonly)
+    const statusVal = form.find('input[name="equipamento_ativo"]').val();
+    
+    if (statusVal === 'Inativo') {
+        deactivationFields.show();
+    } else {
+        deactivationFields.hide();
+    }
+}
+
+
+// =================================================================
+// MOTOR DE CAMPOS DEPENDENTES E AUTO-PREENCHIMENTO
+// =================================================================
+function setupDependentFields(groups, containerSelector) {
+    const form = $(containerSelector).closest('form');
+
+    // Percorre todos os campos procurando as regras especiais
+    groups.forEach(group => {
+        group.fields.forEach(field => {
+            
+            // 1. REGRA DE FILTRAGEM (Ex: Fabricante -> Modelo)
+            if (field.dependsOn) {
+                const parentSelect = form.find(`[name="${field.dependsOn}"]`);
+                const childSelect = form.find(`[name="${field.name}"]`);
+
+                if (parentSelect.length && childSelect.length) {
+                    // Quando o pai (Fabricante) mudar...
+                    parentSelect.off(`change.dep_${field.name}`).on(`change.dep_${field.name}`, function() {
+                        const parentValue = $(this).val();
+                        
+                        // Limpa o filho (Modelo)
+                        childSelect.empty().append('<option value="">Selecione...</option>');
+
+                        // Se o pai tem um valor selecionado, busca os filhos correspondentes
+                        if (parentValue && dropdownData[field.dropdownSource]) {
+                            const allOptions = dropdownData[field.dropdownSource];
+                            
+                            // Filtra os modelos onde o fabricante_id é igual ao selecionado
+                            const filteredOptions = allOptions.filter(opt => String(opt[field.filterField]) === String(parentValue));
+
+                            // Descobre os nomes dos campos de ID e Texto
+                            const configDrop = typeof DROPDOWN_CONFIG !== 'undefined' ? DROPDOWN_CONFIG[field.dropdownSource] : null;
+                            const idProp = configDrop ? configDrop.idField : (filteredOptions[0] && filteredOptions[0].hasOwnProperty('id') ? 'id' : Object.keys(filteredOptions[0] || {})[0]);
+                            const textProp = configDrop ? configDrop.textField : (filteredOptions[0] && filteredOptions[0].hasOwnProperty('text') ? 'text' : Object.keys(filteredOptions[0] || {})[1]);
+
+                            // Popula o filho apenas com as opções filtradas
+                            filteredOptions.forEach(opt => {
+                                childSelect.append(new Option(opt[textProp], opt[idProp], false, false));
+                            });
+                        }
+                        
+                        // Atualiza o visual do Select2
+                        childSelect.trigger('change'); 
+                    });
+                }
+            }
+
+            // 2. REGRA DE AUTO-PREENCHIMENTO (Ex: Centro de Custo -> Estabelecimento)
+            if (field.autoPopulateFrom) {
+                const parentSelect = form.find(`[name="${field.autoPopulateFrom.parent}"]`);
+                const targetSelect = form.find(`[name="${field.name}"]`);
+
+                if (parentSelect.length && targetSelect.length) {
+                    // Quando o Centro de Custo mudar...
+                    parentSelect.off(`change.auto_${field.name}`).on(`change.auto_${field.name}`, function() {
+                        const parentValue = $(this).val();
+                        const sourceData = dropdownData[field.autoPopulateFrom.source]; // Ex: pega a lista de centros
+
+                        if (parentValue && sourceData) {
+                            // Encontra a linha completa do Centro de Custo selecionado
+                            const parentRecord = sourceData.find(item => String(item[field.autoPopulateFrom.linkField]) === String(parentValue));
+                            
+                            // Se encontrou e ele tem o ID do estabelecimento atrelado...
+                            if (parentRecord && parentRecord[field.autoPopulateFrom.valueField]) {
+                                const newValue = parentRecord[field.autoPopulateFrom.valueField];
+                                // Preenche o Estabelecimento automaticamente!
+                                targetSelect.val(newValue).trigger('change');
+                            } else {
+                                targetSelect.val('').trigger('change');
+                            }
+                        } else {
+                            targetSelect.val('').trigger('change');
+                        }
+                    });
+                }
+            }
+            
+        });
+    });
+}
+
+
+/**
+ * [V4 - Listener Corrigido] Gera os campos de um formulário dinamicamente.
+ * Anexa listeners para campos condicionais (Plano Preventivo) e chama toggle inicial.
+ * @param {object} record - Os dados de um registro existente (opcional).
+ * @param {string} containerSelector - O seletor do container onde os campos HTML serão injetados.
+ */
+function generateFormFields(record = {}, containerSelector = '#formModal .modal-body') {
+    const config = ENTITY_CONFIG[currentEntity];
+    let groups = config.formFieldsConfig;
+    let html = '<div class="row g-3">'; // Inicia a row principal
+
+    // --- Validação da Configuração ---
+    if (!Array.isArray(groups) || groups.length === 0) {
+        $(containerSelector).html('<p>Configuração de formulário não encontrada.</p>');
+        return;
+    }
+    if (groups.length > 0 && groups[0].name) {
+        groups = [{ fields: groups }]; // Garante estrutura de grupos
+    }
+
+    // --- Geração do HTML ---
+    groups.forEach((group, index) => {
+
+        if (group.groupTitle) {
+            html += `<div class="col-12 ${index > 0 ? 'mt-4' : ''}"><h6>${group.groupTitle}</h6><hr class="mt-1"></div>`;
+        }
+        group.fields.forEach(field => {
+
+            // --- ADICIONE ESTE LOG DE DEBUG ---
+            if (field.name === 'otica_referencia_id') {
+                console.log("=== DEBUG REFERENCIA ===");
+                console.log("Dropdown Source:", field.dropdownSource);
+                console.log("Dados no DropdownData:", dropdownData[field.dropdownSource]);
+                if (!dropdownData[field.dropdownSource]) {
+                    console.error("ERRO: A chave 'otica_referencias' não existe ou está vazia em dropdownData.");
+                }
+            }
+            // ----------------------------------
+            let value = record[field.name] !== undefined && record[field.name] !== null ? record[field.name] : '';
+            let valueAttribute = '';
+            if (field.type === 'date' && value) {
+                if (typeof value === 'string' && value.includes('/')) {
+                    const parts = value.split(' ')[0].split('/');
+                    if(parts.length === 3){ value = `${parts[2]}-${parts[1]}-${parts[0]}`; } else { value = '';}
+                } else {
+                    try {
+                         const dt = new Date(value);
+                         if (!isNaN(dt.getTime())) {
+                             dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                             value = dt.toISOString().split('T')[0];
+                         } else { value = ''; }
+                    }
+                    catch(e) { console.error(`Data inválida (${field.name}):`, value); value = ''; }
+                }
+                valueAttribute = `value="${value}"`;
+            } else if (field.mask !== 'money') {
+                 valueAttribute = `value="${String(value).replace(/"/g, '&quot;')}"`;
+            }
+            const colClass = field.className || 'col-md-6';
+            html += `<div class="${colClass}">`;
+            html += `<label for="${field.name}" class="form-label">${field.label}</label>`;
+            if (field.type === 'select' && field.options) {
+                html += `<select class="form-select" id="${field.name}" name="${field.name}">`;
+                field.options.forEach(opt => {
+                    const isSelected = String(opt).toLowerCase() == String(value).toLowerCase() ? 'selected' : '';
+                    html += `<option value="${opt}" ${isSelected}>${opt}</option>`;
+                });
+                html += '</select>';
+            } else if (field.type === 'select') {
+                 html += `<select class="form-select" id="${field.name}" name="${field.name}">`;
+                 html += '<option value="">Selecione...</option>';
+                 const options = dropdownData[field.dropdownSource] || [];
+                 if (options.length > 0) {
+                     const dropdownConfig = DROPDOWN_CONFIG[field.dropdownSource];
+                     const idProp = options[0].hasOwnProperty('id') ? 'id' : (dropdownConfig ? dropdownConfig.idField : null);
+                     const textProp = options[0].hasOwnProperty('text') ? 'text' : (dropdownConfig ? dropdownConfig.textField : null);
+                     if (idProp && textProp) {
+                         options.sort((a, b) => String(a[textProp] || '').localeCompare(String(b[textProp] || '')));
+                         options.forEach(opt => {
+                             const isSelected = opt[idProp] == value ? 'selected' : '';
+                             html += `<option value="${opt[idProp]}" ${isSelected}>${opt[textProp]}</option>`;
+                         });
+                     } else { console.warn("Dropdown config inválida:", field.dropdownSource); }
+                 }
+                 html += '</select>';
+            } else if (field.type === 'textarea') {
+                 html += `<textarea class="form-control" id="${field.name}" name="${field.name}" rows="3">${value}</textarea>`;
+            } else {
+                const inputType = field.type || 'text';
+                const readonlyAttr = field.readonly ? 'readonly' : '';
+                const stepAttr = inputType === 'number' && field.step ? `step="${field.step}"` : '';
+                // Habilita seleção restrita de imagens caso seja type="file"
+                const acceptAttr = inputType === 'file' ? `accept="image/jpeg, image/png"` : '';
+                
+                html += `<input type="${inputType}" class="form-control" id="${field.name}" name="${field.name}" ${valueAttribute} ${readonlyAttr} ${stepAttr} ${acceptAttr}>`;
+            }
+            html += '<div class="invalid-feedback"></div></div>';
+        });
+    });
+    html += `<input type="hidden" name="${config.idField}" value="${record[config.idField] || ''}"></div>`; // Fecha row principal
+    $(containerSelector).html(html);
+
+    // --- APLICA MÁSCARAS E Select2 (lógica igual à V3) ---
+    const phoneMaskBehavior = function (val) { /* ... */ return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009'; };
+    const phoneOptions = { onKeyPress: function(val, e, field, options) { /* ... */ field.mask(phoneMaskBehavior.apply({}, arguments), options); } };
+    const masks = { 'cep': '00000-000', 'cnpj': '00.000.000/0000-00', 'money': { mask: '#.##0,00', reverse: true }, 'cpf': '000.000.000-00' };
+    const isInModal = $(containerSelector).closest('.modal-content').length > 0;
+    const select2Options = { width: '100%' };
+    if (isInModal) { select2Options.dropdownParent = $(containerSelector).closest('.modal-content'); }
+
+    groups.forEach(group => {
+        group.fields.forEach(field => {
+            const inputElement = $(`#${field.name}`);
+            if (field.mask) { /* ... (Lógica da máscara igual V3) ... */
+                if (field.mask === 'sp_celphones') {
+                    inputElement.mask(phoneMaskBehavior, phoneOptions);
+                } else if (masks[field.mask]) {
+                    const maskOptions = typeof masks[field.mask] === 'object' ? masks[field.mask] : {};
+                    const maskPattern = typeof masks[field.mask] === 'object' ? masks[field.mask].mask : masks[field.mask];
+                    inputElement.mask(maskPattern, maskOptions);
+                    if (field.mask === 'money') {
+                        let numericValue = record[field.name];
+                        if (numericValue !== undefined && numericValue !== null && numericValue !== '') {
+                            let formattedValue = Number(numericValue).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            inputElement.val(formattedValue).trigger('input');
+                        } else { inputElement.val('').trigger('input'); }
+                    }
+                }
+            }
+            if (field.useSelect2) {
+                 if (field.name === 'equipamento_id' || field.name === 'desativacao-equipamento-id') {
+                      const equipamentoId = record[field.name];
+                      if (equipamentoId && record.equipamento_descricaocompleta) {
+                          const option = new Option(record.equipamento_descricaocompleta, equipamentoId, true, true);
+                          inputElement.append(option).trigger('change');
+                      }
+                      inputElement.select2({
+                          ...select2Options,
+                          placeholder: 'Digite para buscar...',
+                          minimumInputLength: 2,
+                          ajax: { 
+                               delay: 800,
+                               transport: function(params, success, failure) {
+                                   const spreadsheetId = ENTITY_CONFIG.EQUIPAMENTOS.spreadsheetId;
+                                   google.script.run
+                                     .withSuccessHandler(success)
+                                     .withFailureHandler(failure)
+                                     .getDropdownOptions({ source: 'EQUIPAMENTOS', term: params.data.term, spreadsheetId: spreadsheetId });
+                               },
+                               processResults: function (data) {
+                                   if (data.error) { console.error("Erro busca Select2:", data.error); return { results: [] }; }
+                                   return { results: data.results };
+                               },
+                               cache: true
+                          }
+                      });
+                  } else {
+                      initSelect2(inputElement, select2Options); // Aplica Select2 padrão
+                  }
+            }
+        });
+    });
+
+    // --- BLOCO FINAL: ANEXA LISTENERS E CHAMA FUNÇÕES DE SETUP ---
+    setTimeout(() => {
+        const form = $(containerSelector).closest('form'); // Seleciona o formulário pai
+        const currentFormSelector = `#${form.attr('id')}`; // Pega o ID do formulário atual
+
+        console.log(`[DEBUG V4 Dynamic] Anexando listeners e chamando setups para o formulário: ${currentFormSelector}`);
+
+        // --- Campos Dependentes e Calculados ---
+        if (typeof setupDependentFields === 'function') setupDependentFields(groups, containerSelector);
+        if (typeof setupAutomaticCalculations === 'function') setupAutomaticCalculations(groups, containerSelector);
+
+        // --- Visibilidade do Plano Preventivo (SE for o form de Equipamentos) ---
+        if (currentEntity === 'EQUIPAMENTOS') {
+            const possuiPlanoSelect = form.find('#possui_plano_preventivo');
+            const servicoContratadoSelect = form.find('#plano_servicocontratado');
+            const tipoPlanoSelect = form.find('#plano_tipoplano_id');
+
+            // Remove listeners antigos e anexa os novos, passando o SELETOR DO FORM CORRETO
+            form.off('.planoVisibilityDynamic')
+                .on('change.planoVisibilityDynamic', '#possui_plano_preventivo, #plano_servicocontratado, #plano_tipoplano_id', function(event) {
+                    console.log(`[DEBUG V5 Dynamic] Evento CHANGE capturado em: #${event.target.id} DENTRO de ${currentFormSelector}`);
+                    // Chama a função togglePlanoFields (que está neste arquivo)
+                    // Passa o currentFormSelector para que togglePlanoFields saiba qual form analisar
+                    togglePlanoFields(currentFormSelector, event.target.id);
+                });
+            console.log("[DEBUG V5 Dynamic] Listeners anexados a:", currentFormSelector);
+
+             // Chama togglePlanoFields uma vez para o estado inicial, passando o seletor do form
+             console.log("[DEBUG V5 Dynamic] Chamando togglePlanoFields inicial.");
+             togglePlanoFields(currentFormSelector, "Chamada Inicial Pós Setup");
+        }
+
+        // --- Campos de Desativação (SE for o form de Equipamentos) ---
+        if (currentEntity === 'EQUIPAMENTOS' && typeof setupDeactivationFields === 'function') {
+             // Passa o seletor do formulário atual para a função
+             setupDeactivationFields(currentFormSelector);
+             console.log("[DEBUG V5 Dynamic] setupDeactivationFields chamada para:", currentFormSelector);
+        }
+
+        isFormReadyForSubmit = true; // Libera o formulário para submit
+        console.log("[DEBUG] generateFormFields V4 concluído e form liberado.");
+    }, 300); // Aumentei ligeiramente o delay para garantir
+}
+
+
+
+/**
+ * Carrega e inicializa a DataTable principal.
+ * Suporta processamento Client-Side (carrega tudo) e Server-Side (paginado).
+ */
+function loadDataTable() {
+    showLoader(true);
+    const config = ENTITY_CONFIG[currentEntity];
+    
+    if (!config) {
+        showToast(`Erro: Configuração não encontrada para ${currentEntity}`, 'danger');
+        showLoader(false);
+        return;
+    }
+
+    // Determina se deve usar modo Server-Side
+    const useServerSide = config.serverSide || currentEntity === 'AQUISICOES'; 
+
+    // Destrói instância anterior se existir
+    if ($.fn.DataTable.isDataTable('#main-table')) {
+        if (dataTable) dataTable.destroy();
+        $('#main-table').empty(); 
+    }
+
+    // --- PROCESSAMENTO DE COLUNAS ---
+    // Mapeia renderizadores de string para funções e injeta defaultContent para evitar erros
+    const processedColumns = (config.columns || []).map(col => {
+        const newCol = { ...col };
+        
+        if (newCol.defaultContent === undefined) {
+            newCol.defaultContent = ""; // Evita erro de "Requested unknown parameter"
+        }
+
+        if (typeof newCol.render === 'string' && functionRegistry[newCol.render]) {
+            newCol.render = functionRegistry[newCol.render];
+        }
+        return newCol;
+    });
+
+    let tableColumns = [...processedColumns];
+    let columnDefs = [];
+
+    // Adiciona Coluna de Ações (se não for ReadOnly e não tiver customizada)
+    const hasCustomActionsColumn = config.columns && config.columns.some(col => col.title === 'Ações');
+    
+    if (!config.readOnly && !hasCustomActionsColumn) {
+        tableColumns.push({ 
+            data: null, 
+            title: 'Ações', 
+            orderable: false, 
+            searchable: false, 
+            className: 'no-filter',
+            defaultContent: ''
+        });
+        
+        columnDefs.push({
+            targets: -1,
+            render: function(data, type, row, meta) {
+                const id = row[config.idField];
+                const idString = typeof id === 'string' ? `'${id.replace(/'/g, "\\'")}'` : id;
+                
+                // Renderizadores Específicos por Entidade
+                if (currentEntity === 'CHAMADOS_LISTA') return functionRegistry.renderAcoesTecnico(data, type, row);
+                
+                if (currentEntity === 'CORRETIVAS') {
+                    return `<div class="action-buttons"><button class="btn btn-sm btn-primary" onclick="openCorretivaModal(${idString})"><i class="fas fa-tasks me-1"></i> Gerenciar</button></div>`;
+                }
+                
+                if (currentEntity === 'PREVENTIVAS') {
+                     const isRealizada = row.statuspreventiva_descricao === 'Realizada';
+                     return isRealizada
+                         ? `<div class="action-buttons"><button class="btn btn-sm btn-info" onclick="openPreventivaModal(${idString})"><i class="fas fa-eye me-1"></i> Visualizar</button></div>`
+                         : `<div class="action-buttons"><button class="btn btn-sm btn-success" onclick="openPreventivaModal(${idString})"><i class="fas fa-play me-1"></i> Executar</button></div>`;
+                }
+                
+                if (currentEntity === 'CHECKLIST_ITENS_VIEW') {
+                     const masterId = row.cadastrochecklistcalibracao_master_id;
+                     const masterIdString = typeof masterId === 'string' ? `'${masterId.replace(/'/g, "\\'")}'` : masterId;
+                     return `<div class="action-buttons"><button class="btn btn-sm btn-primary" onclick="openUnifiedChecklistModal(${masterIdString})"><i class="fas fa-pencil-alt me-1"></i> Gerenciar Checklist</button></div>`;
+                }
+
+                // Renderizador Padrão (Visualizar/Editar/Status)
+                let buttonsHtml = `<a href="#" class="action-icon" onclick="openDetailsModal(${idString}); return false;" title="Visualizar Detalhes"><i class="fas fa-eye"></i></a>`;
+                
+                if (config.customModalFunction && typeof window[config.customModalFunction] === 'function') {
+                     buttonsHtml += ` <a href="#" class="action-icon" onclick="window['${config.customModalFunction}'](${idString}); return false;" title="Editar/Gerenciar"><i class="fas fa-pencil-alt"></i></a>`;
+                } else {
+                     buttonsHtml += ` <a href="#" class="action-icon" onclick="openFormModalForEdit(${idString}); return false;" title="Editar"><i class="fas fa-pencil-alt"></i></a>`;
+                }
+                
+                if (currentEntity === 'EQUIPAMENTOS') {
+                    buttonsHtml += ` <a href="#" class="action-icon" onclick="duplicateRecord(${idString}); return false;" title="Duplicar Equipamento"><i class="fas fa-copy"></i></a>`;
+                }
+
+                if(config.statusField) {
+                     const isActive = row[config.statusField] === 'Ativo';
+                     buttonsHtml += ` <a href="#" class="action-icon ${isActive ? 'text-danger' : 'text-success'}" onclick="toggleStatus(${idString}, ${isActive}); return false;" title="${isActive ? 'Inativar' : 'Ativar'}"><i class="fas ${isActive ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></a>`;
+                }
+                return `<div class="action-buttons">${buttonsHtml}</div>`;
+            }
+        });
+    }
+
+    // Adiciona TFOOT se necessário
+    if (typeof config.initComplete === 'string' && functionRegistry[config.initComplete]) {
+        if ($('#main-table tfoot').length === 0) {
+            let footerHtml = '<tfoot><tr>';
+            tableColumns.forEach(() => footerHtml += '<th></th>'); 
+            footerHtml += '</tr></tfoot>';
+            $('#main-table').append(footerHtml);
+        }
+    }
+
+    // --- OPÇÕES BASE DO DATATABLES ---
+    const dtOptions = {
+        responsive: true,
+        language: DATATABLES_PT_BR,
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+        order: config.order || [[0, 'asc']],
+        columns: tableColumns, 
+        columnDefs: columnDefs, 
+        initComplete: (typeof config.initComplete === 'string' && functionRegistry[config.initComplete]) 
+                      ? functionRegistry[config.initComplete] 
+                      : undefined,
+
+        // === ADICIONE ESTE BLOCO AQUI ===
+        createdRow: function(row, data, dataIndex) {
+            // Aplica o cursor de mãozinha e o tooltip em TODAS as linhas de TODAS as tabelas
+            $(row).css('cursor', 'pointer').attr('title', 'Clique duplo para visualizar/editar');
+            
+            // Se houver lógica de destaque (highlight), ela continua funcionando via classe CSS
+            if (recordIdToHighlight && String(data[config.idField]) === String(recordIdToHighlight)) {
+                $(row).addClass('row-highlight');
+            }
+        },
+        // ================================
+        
+        // Callback para destacar linha após edição/criação (Funciona bem para Server-Side)
+        drawCallback: function(settings) {
+            // 1. Limpa tooltips antigos
+            $('.tooltip').remove(); 
+
+            // 2. Inicializa Tooltips "Simples" (padrão do sistema)
+            var simpleTooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]:not(.custom-tooltip-icon)'));
+            simpleTooltips.map(function (el) {
+                return new bootstrap.Tooltip(el);
+            });
+
+            // 3. Inicializa Tooltips "Ricos" (Contratos) - Montagem Dinâmica via JS
+            var customTooltips = [].slice.call(document.querySelectorAll('.custom-tooltip-icon'));
+            customTooltips.map(function (el) {
+                return new bootstrap.Tooltip(el, {
+                    html: true,
+                    sanitize: false,
+                    boundary: 'window',
+                    trigger: 'hover focus',
+                    title: function() {
+                        // AQUI ESTÁ A MÁGICA: O JS constrói o HTML na hora
+                        // Isso evita que o navegador "estrague" o HTML nos atributos
+                        const objeto = el.getAttribute('data-objeto') || '-';
+                        const cobertura = el.getAttribute('data-cobertura') || '-';
+                        const responsavel = el.getAttribute('data-responsavel') || '-';
+
+                        return `
+                            <div class="text-start" style="font-size: 0.85rem; max-width: 300px;">
+                                <div class="mb-2">
+                                    <strong class="text-warning">Objeto:</strong><br>
+                                    <span class="text-light">${objeto}</span>
+                                </div>
+                                <div class="mb-2 border-top border-secondary pt-2">
+                                    <strong class="text-info">Cobertura:</strong><br>
+                                    <span class="text-light">${cobertura.replace(/,/g, ',<br>')}</span>
+                                </div>
+                                <div class="border-top border-secondary pt-2">
+                                    <strong class="text-success">Responsável:</strong> ${responsavel}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            });
+
+            // 4. Lógica de Highlight (Mantida)
+            if (recordIdToHighlight) {
+                const api = this.api();
+                const data = api.rows({ page: 'current' }).data();
+                const config = ENTITY_CONFIG[currentEntity]; 
+                for (let i = 0; i < data.length; i++) {
+                    if (config && config.idField) {
+                        const rowId = data[i][config.idField];
+                        if (rowId && String(rowId) === String(recordIdToHighlight)) {
+                            const rowNode = api.row(i).node();
+                            if (rowNode) {
+                                const $row = $(rowNode);
+                                $row.addClass('row-highlight');
+                                try { $row[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+                                setTimeout(() => { $row.removeClass('row-highlight'); }, 2500);
+                            }
+                            recordIdToHighlight = null;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // --- CONFIGURAÇÃO SERVER-SIDE VS CLIENT-SIDE ---
+    if (useServerSide) {
+        dtOptions.processing = true;
+        dtOptions.serverSide = true;
+        
+        // Definição da função AJAX
+        dtOptions.ajax = function (data, callback, settings) {
+            
+            // Monta o objeto options corretamente
+            const options = {
+                sheetName: config.sheetName || currentEntity,
+                spreadsheetId: config.spreadsheetId,
+                draw: data.draw,
+                start: data.start,
+                length: data.length,
+                search: data.search,
+                order: data.order.map(o => ({ column: data.columns[o.column].data, dir: o.dir })).filter(o => o.column),
+                columns: data.columns.map(c => c.data),
+                lookups: config.serverSideLookups || [] 
+            };
+            
+            // [AÇÃO 2 - CORREÇÃO FINAL] Prioriza a função customizada definida no config
+            let serverFunc = config.customGetDataFunction;
+            
+            if (!serverFunc) {
+                // Fallback padrão: Decide entre Aquisições ou Genérico
+                serverFunc = (currentEntity === 'AQUISICOES') ? 'getAquisicoesServerSide' : 'getRecordsServerSide';
+            }
+            
+            // Chama o backend dinamicamente
+            // Usa executeBackendWithRetry se quiser retry automático, ou google.script.run direto.
+            // Aqui usaremos google.script.run direto conforme padrão do DataTables, 
+            // mas você pode adaptar para usar o retry se desejar.
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response.error) { 
+                        handleServerError({ message: response.error }); 
+                        callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                        return; 
+                    }
+                    callback(response);
+                })
+                .withFailureHandler(err => {
+                    handleServerError(err);
+                    callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [], error: err.message });
+                })
+                [serverFunc](options); // Executa a função definida na variável serverFunc
+        };
+
+        // Inicializa a tabela Server-Side
+        dataTable = $('#main-table').DataTable(dtOptions);
+
+        // --- NOVO: Listener para abrir/fechar Child Rows ---
+        if (config.childRowRenderFunction) {
+            $('#main-table tbody').off('click', 'td.dt-control').on('click', 'td.dt-control', function () {
+                const tr = $(this).closest('tr');
+                const row = dataTable.row(tr);
+                const renderFunc = functionRegistry[config.childRowRenderFunction];
+
+                if (row.child.isShown()) {
+                    // Fecha a linha se já estiver aberta
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    // Abre a linha se estiver fechada
+                    if (typeof renderFunc === 'function') {
+                        // Passa os dados da linha para a função de renderização
+                        row.child(renderFunc(row.data())).show();
+                        tr.addClass('shown');
+                    }
+                }
+            });
+        }
+        showLoader(false); // Loader inicial pode sumir, o DT tem seu próprio 'Processing'
+
+    } else {
+        // --- LÓGICA CLIENT-SIDE OTIMIZADA ---
+        const sheetName = config.sheetName || currentEntity;
+        const getDataFunction = config.customGetDataFunction || 'getRecords';
+        
+        console.log(`Configurando tabela '${currentEntity}' via AJAX (Client-Side).`);
+        
+        dtOptions.processing = true;
+        dtOptions.serverSide = false; // Mantém falso para o DataTables paginar no navegador
+        
+        dtOptions.ajax = function(data, callback, settings) {
+            // Em atualizações silenciosas (ajax.reload), não trava a tela inteira
+            if (!settings.oLoaded) { showLoader(true, "Buscando dados..."); }
+            
+            google.script.run
+                .withSuccessHandler(responseData => {
+                    settings.oLoaded = true;
+                    showLoader(false);
+                    if (responseData.error) {
+                        showToast("Erro: " + responseData.error, 'danger');
+                        callback({ data: [] });
+                    } else {
+                        callback({ data: responseData });
+                    }
+                })
+                .withFailureHandler(err => {
+                    settings.oLoaded = true;
+                    showLoader(false);
+                    showToast('Erro ao carregar dados: ' + err.message, 'danger');
+                    callback({ data: [] });
+                })
+                [getDataFunction](sheetName, config.spreadsheetId);
+        };
+
+        dataTable = $('#main-table').DataTable(dtOptions);
+    }
+
+    // Lógica de Destaque (Highlight) para Client-Side
+    // (Para Server-Side, isso é tratado no drawCallback acima)
+    if (!useServerSide && recordIdToHighlight) {
+        setTimeout(() => {
+            if (dataTable && dataTable.row) {
+                dataTable.rows().every(function() {
+                    const d = this.data();
+                    if (d && String(d[config.idField]) === String(recordIdToHighlight)) {
+                        $(this.node()).addClass('row-highlight');
+                        this.node().scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => { $(this.node()).removeClass('row-highlight'); }, 2500);
+                    }
+                });
+                recordIdToHighlight = null;
+            }
+        }, 500);
+    }
+}
+
+function onDataLoaded(data) {
+    if(data.error){
+        showToast("Erro: " + data.error, 'danger');
+        showLoader(false);
+        return;
+    }
+    const config = ENTITY_CONFIG[currentEntity];
+    if ($.fn.DataTable.isDataTable('#main-table')) {
+        dataTable.clear().destroy();
+    }
+    $('#main-table').empty();
+    const processedColumns = config.columns.map(col => {
+        if (typeof col.render === 'string' && functionRegistry[col.render]) {
+            return { ...col, render: functionRegistry[col.render] };
+        }
+        return col;
+    });
+    let tableColumns = [...processedColumns];
+    let columnDefs = [];
+    // Verifica se uma coluna de "Ações" customizada JÁ NÃO FOI definida na configuração da entidade
+    const hasCustomActionsColumn = config.columns.some(col => col.title === 'Ações');
+
+    if (!config.readOnly && !hasCustomActionsColumn) {
+        tableColumns.push({ data: null, title: 'Ações', orderable: false, defaultContent: '', className: 'no-filter' });
+        columnDefs.push({
+            targets: -1,
+            orderable: false,
+            searchable: false,
+            render: function(data, type, row, meta) {
+                const id = row[config.idField];
+                const idString = typeof id === 'string' ? `'${id.replace(/'/g, "\\'")}'` : id;
+                if (currentEntity === 'CHAMADOS_LISTA') {
+                    return renderAcoesTecnico(data, type, row);
+                }
+                if (currentEntity === 'CORRETIVAS') {
+                    return `<div class="action-buttons"><button class="btn btn-sm btn-primary" onclick="openCorretivaModal(${idString})"><i class="fas fa-tasks me-1"></i> Gerenciar</button></div>`;
+                }
+                if (currentEntity === 'PREVENTIVAS') {
+                    const isRealizada = row.statuspreventiva_descricao === 'Realizada';
+                    return isRealizada
+                        ? `<div class="action-buttons"><button class="btn btn-sm btn-info" onclick="openPreventivaModal(${idString})"><i class="fas fa-eye me-1"></i> Visualizar</button></div>`
+                        : `<div class="action-buttons"><button class="btn btn-sm btn-success" onclick="openPreventivaModal(${idString})"><i class="fas fa-play me-1"></i> Executar</button></div>`;
+                }
+                
+                const isActive = row[config.statusField] === 'Ativo';
+                if (currentEntity === 'CHECKLIST_ITENS_VIEW') {
+                    const masterId = row.cadastrochecklistcalibracao_master_id;
+                    const masterIdString = typeof masterId === 'string' ? `'${masterId.replace(/'/g, "\\'")}'` : masterId;
+                    return `<div class="action-buttons">
+                                <button class="btn btn-sm btn-primary" onclick="openUnifiedChecklistModal(${masterIdString})">
+                                    <i class="fas fa-pencil-alt me-1"></i> Gerenciar Checklist
+                                </button>
+                            </div>`;
+                }
+                let buttonsHtml = `<a href="#" class="action-icon" onclick="openDetailsModal(${idString}); return false;" title="Visualizar Detalhes"><i class="fas fa-eye"></i></a>`;
+                
+                if (config.customModalFunction && typeof functionRegistry[config.customModalFunction] === 'function') {
+                    buttonsHtml += ` <a href="#" class="action-icon" onclick="functionRegistry['${config.customModalFunction}'](${idString}); return false;" title="Editar"><i class="fas fa-pencil-alt"></i></a>`;
+                } else {
+                    buttonsHtml += ` <a href="#" class="action-icon" onclick="openFormModalForEdit(${idString}); return false;" title="Editar"><i class="fas fa-pencil-alt"></i></a>`;
+                }
+
+                if (currentEntity === 'EQUIPAMENTOS') {
+                    buttonsHtml += ` <a href="#" class="action-icon" onclick="duplicateRecord(${idString}); return false;" title="Duplicar Equipamento"><i class="fas fa-copy"></i></a>`;
+                }
+                if(config.statusField) {
+                    buttonsHtml += ` <a href="#" class="action-icon ${isActive ? 'text-danger' : 'text-success'}" onclick="toggleStatus(${idString}, ${isActive}); return false;" title="${isActive ? 'Inativar' : 'Ativar'}"><i class="fas ${isActive ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></a>`;
+                }
+                return `<div class="action-buttons">${buttonsHtml}</div>`;
+            }
+        });
+    }
+    
+    let dtOptions = {
+        data: data,
+        columns: tableColumns,
+        columnDefs: columnDefs,
+        responsive: true,
+        language: DATATABLES_PT_BR,
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+        order: config.order || [[0, 'asc']]
+    };
+    
+    if (typeof config.initComplete === 'string' && functionRegistry[config.initComplete]) {
+        dtOptions.initComplete = functionRegistry[config.initComplete];
+        // Adiciona o tfoot apenas se initComplete estiver definido
+        if ($('#main-table tfoot').length === 0) {
+            let footerHtml = '<tfoot><tr>';
+            config.columns.forEach(() => footerHtml += '<th></th>');
+            if (!config.readOnly) footerHtml += '<th></th>'; // Coluna de ações
+            footerHtml += '</tr></tfoot>';
+            $('#main-table').append(footerHtml);
+        }
+    }
+
+    dataTable = $('#main-table').DataTable(dtOptions);
+    
+    if (recordIdToHighlight) {
+        dataTable.rows().every(function() {
+            const rowData = this.data();
+            if (String(rowData[config.idField]) == String(recordIdToHighlight)) {
+                const rowNode = this.node();
+                $(rowNode).addClass('row-highlight');
+                rowNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => { $(rowNode).removeClass('row-highlight'); }, 2500);
+            }
+        });
+        recordIdToHighlight = null;
+    }
+
+    showLoader(false);
+}
+
+
+/**
+ * [V3 - COM RESET FORÇADO] Inicializa uma tabela DataTable genérica.
+ */
+function initServerSideCrudView() {
+    const config = ENTITY_CONFIG[currentEntity];
+    if (!config) {
+        console.error("Configuração não encontrada:", currentEntity);
+        return;
+    }
+
+    // 1. LIMPEZA AGRESSIVA: Remove qualquer resquício de módulos anteriores
+    resetTableViewContainer(); 
+    
+    // 2. Restaura elementos globais da UI
+    $('.main-view').hide(); // Esconde todos os outros containers (dashboards, etc)
+    $('#stats-cards-container').hide(); // Esconde cards globais
+    $('#custom-filters-container').hide(); // Esconde filtros customizados
+    
+    // 3. Configura o Título e Botão
+    $('#page-title').show().text(config.label);
+    
+    $('#addNewBtn').hide(); 
+    if (!config.readOnly) {
+        // Remove listeners antigos para evitar duplicação de cliques
+        $('#addNewBtn').show()
+            .html('<i class="fas fa-plus me-2"></i>Adicionar Novo')
+            .off('click')
+            .on('click', openFormModalForAdd);
+    }
+
+    // 4. Mostra o container padrão (agora limpo)
+    $('#table-view').show();
+
+    // 5. Prepara as colunas
+    const processedColumns = config.columns.map(col => {
+        if (typeof col.render === 'string' && functionRegistry[col.render]) {
+            return { ...col, render: functionRegistry[col.render] };
+        }
+        return col;
+    });
+
+    // Adiciona coluna de ações se necessário
+    if (!config.readOnly) {
+        const hasCustomActions = config.columns.some(col => col.title === 'Ações');
+        if (!hasCustomActions) {
+            processedColumns.push({
+                data: null, title: 'Ações', orderable: false, searchable: false, className: 'no-filter',
+                render: function(data, type, row) {
+                    const idString = `'${String(row[config.idField]).replace(/'/g, "\\'")}'`;
+                    const isActive = config.statusField ? row[config.statusField] === 'Ativo' : true;
+                    
+                    let buttonsHtml = '';
+                    
+                    // Botão Editar
+                    if (config.customModalFunction && typeof window[config.customModalFunction] === 'function') {
+                         buttonsHtml += `<a href="#" class="action-icon" onclick="window['${config.customModalFunction}'](${idString}); return false;" title="Editar"><i class="fas fa-pencil-alt"></i></a>`;
+                    } else {
+                         buttonsHtml += `<a href="#" class="action-icon" onclick="openFormModalForEdit(${idString}); return false;" title="Editar"><i class="fas fa-pencil-alt"></i></a>`;
+                    }
+                    
+                    // Botão Status
+                    if (config.statusField) {
+                         buttonsHtml += ` <a href="#" class="action-icon ${isActive ? 'text-danger' : 'text-success'}" onclick="toggleStatus(${idString}, ${isActive}); return false;" title="${isActive ? 'Inativar' : 'Ativar'}"><i class="fas ${isActive ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></a>`;
+                    }
+                    return `<div class="action-buttons">${buttonsHtml}</div>`;
+                }
+            });
+        }
+    }
+
+    // 6. Inicializa o DataTables
+    if ($.fn.DataTable.isDataTable('#main-table')) {
+        $('#main-table').DataTable().destroy();
+    }
+
+    // Configura o tfoot para filtros
+    if ($('#main-table tfoot th').length === 0) {
+         let footerHtml = '<tr>';
+         processedColumns.forEach(() => footerHtml += '<th></th>');
+         footerHtml += '</tr>';
+         $('#main-table tfoot').html(footerHtml);
+    }
+
+    dataTable = $('#main-table').DataTable({
+        processing: true,
+        serverSide: true,
+        searchDelay: 1000,
+        responsive: true,
+        language: DATATABLES_PT_BR,
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+        order: config.order || [[0, 'asc']],
+        columns: processedColumns,
+        
+        initComplete: function() {
+            // Reaplica a lógica de filtros de coluna
+            if(functionRegistry.initColumnFilters) {
+                functionRegistry.initColumnFilters.call(this);
+            }
+        },
+
+        ajax: function (data, callback, settings) {
+            showLoader(true, "Buscando dados...");
+            
+            // Define a função de backend (Padrão ou Customizada)
+            let serverFunc = 'getRecordsServerSide';
+            if (config.customGetDataFunction) serverFunc = config.customGetDataFunction;
+            if (currentEntity === 'AQUISICOES') serverFunc = 'getAquisicoesServerSide'; // Legado
+
+            const options = {
+                sheetName: config.sheetName || currentEntity,
+                spreadsheetId: config.spreadsheetId,
+                draw: data.draw,
+                start: data.start,
+                length: data.length,
+                search: data.search,
+                order: data.order.map(o => ({ column: data.columns[o.column].data, dir: o.dir })),
+                columns: data.columns.map(c => c.data),
+                lookups: config.serverSideLookups || [] 
+            };
+            
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response.error) { 
+                        handleServerError({ message: response.error }); 
+                        callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                        return; 
+                    }
+                    callback(response);
+                    showLoader(false);
+                })
+                .withFailureHandler(err => {
+                    handleServerError(err);
+                    callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [], error: err.message });
+                })
+                [serverFunc](options);
+        }
+    });
+}
+
+// --- FUNÇÕES DE MODAL E FORMULÁRIO ---
+function openFormModalForAdd() {
+    const config = ENTITY_CONFIG[currentEntity];
+    // ===== INÍCIO DA ALTERAÇÃO =====
+    // Se a entidade tiver uma função de modal customizada, chame-a e pare a execução.
+    if (config.customModalFunction && typeof window[config.customModalFunction] === 'function') {
+        window[config.customModalFunction](); // Chama a função pelo nome (sem ID, pois é um novo registro)
+        return;
+    }
+    // ===== FIM DA ALTERAÇÃO =====
+
+    isFormReadyForSubmit = false;
+    $('#mainForm')[0].reset();
+    $('#formModalLabel').text(`Adicionar Novo ${config.label}`);
+    generateFormFields({});
+    formModal.show();
+}
+
+/**
+ * Wrapper para abrir o modal de formulário genérico
+ * @param {object} config - Configuração da entidade
+ * @param {object} record - Dados do registro (null para novo)
+ */
+function openFormModal(config, record = null) {
+    isFormReadyForSubmit = false;
+    const isEdit = record && record[config.idField];
+    
+    $('#mainForm')[0].reset();
+    $('#formModalLabel').text(isEdit ? `Editar ${config.label}` : `Adicionar Novo ${config.label}`);
+    generateFormFields(record || {});
+    formModal.show();
+}
+
+/**
+ * VERSÃO CORRIGIDA V6 (Híbrida Segura)
+ * Abre o modal de edição.
+ * Mantém lógica legada para tabelas simples e usa lógica V7 para Equipamentos.
+ */
+function openFormModalForEdit(id) {
+    const config = ENTITY_CONFIG[currentEntity];
+    if (!config) return;
+
+    // Bloqueia submit enquanto carrega
+    isFormReadyForSubmit = false; 
+    
+    // Verifica se é Server-Side (Equipamentos, Aquisições, etc)
+    const isServerSide = config.serverSide || config.customRenderer === 'initServerSideCrudView' || currentEntity === 'EQUIPAMENTOS';
+
+    showLoader(true, "Carregando registro...");
+
+    try {
+        let record = null;
+
+        // 1. Tenta buscar localmente se for Client-Side puro (pequenas listas)
+        // Isso economiza uma ida ao servidor para tabelas pequenas
+        if (!isServerSide) {
+            const activeDataTable = $.fn.DataTable.isDataTable('#main-table') ? dataTable : null;
+            if (activeDataTable) {
+                record = activeDataTable.rows().data().toArray().find(r => String(r[config.idField]) == String(id));
+            }
+        }
+
+        // 2. Se for Server-Side ou não achou localmente, busca no Backend
+        if (isServerSide || !record) {
+             
+             // Define qual função do backend chamar
+             let serverMethod = 'getRecordWithDetails'; // Padrão
+             let serverParams = [config.sheetName || currentEntity, id, config.spreadsheetId]; // Parâmetros padrão
+             
+             // --- DESVIO ESPECÍFICO PARA EQUIPAMENTOS (V7) ---
+             if (currentEntity === 'EQUIPAMENTOS') {
+                 serverMethod = 'getEquipmentAndPlanDetailsForEdit'; // Função V7 blindada
+                 serverParams = [id]; // Apenas o ID do equipamento
+                 console.log(`[Edit] Usando rota especializada V7 para Equipamento ID: ${id}`);
+             } else {
+                 console.log(`[Edit] Usando rota padrão para ${currentEntity} ID: ${id}`);
+             }
+             
+             // Chamada dinâmica ao Google Script
+             google.script.run
+                 .withSuccessHandler(response => {
+                      showLoader(false);
+                      
+                      // Tratamento de Erro
+                      if (response.error || (!response.parent && !response.data && currentEntity !== 'EQUIPAMENTOS')) {
+                          showToast('Erro: Registro não encontrado.', 'danger');
+                          return;
+                      }
+
+                      // Normaliza o objeto de dados (Padrão ou Equipamento)
+                      // Equipamentos V7 retorna { success: true, parent: {...} }
+                      // getRecordWithDetails padrão retorna { success: true, parent: {...}, children: ... }
+                      const recordData = response.parent || response.data || response; 
+
+                      // LOG DE DIAGNÓSTICO
+                      if (currentEntity === 'EQUIPAMENTOS') {
+                          console.log("[Edit] Dados do Equipamento recebidos:", recordData);
+                          console.log("[Edit] Status do Plano:", recordData.prev_ativo);
+                      }
+
+                      $('#formModalLabel').text(`Editar ${config.label}`);
+                      
+                      // Gera o formulário
+                      generateFormFields(recordData);
+                      
+                      // --- CORREÇÃO DE PREENCHIMENTO (TIMEOUT) ---
+                      // Aplica apenas para Equipamentos para garantir que Select2 e condicionais carreguem
+                      if (currentEntity === 'EQUIPAMENTOS') {
+                          setTimeout(() => {
+                              const form = $('#mainForm');
+                              // Força valor do Select "Possui Plano?"
+                              if (recordData.prev_ativo) {
+                                  const selAtivo = form.find('#prev_ativo');
+                                  if(selAtivo.length) selAtivo.val(recordData.prev_ativo).trigger('change');
+                              }
+                              // Recalcula residual se houver campos
+                              if (typeof calculateValorResidual === 'function') calculateValorResidual();
+                              
+                              // Dispara togglePlanoFields para mostrar/esconder abas
+                              if (typeof togglePlanoFields === 'function') {
+                                  console.log("[Edit] Disparando togglePlanoFields forçado.");
+                                  togglePlanoFields('#mainForm', 'PostLoad');
+                              }
+                          }, 300);
+                      }
+                      
+                      formModal.show();
+                 })
+                 .withFailureHandler(err => {
+                    isFormReadyForSubmit = true;
+                    handleServerError(err);
+                 })
+                 [serverMethod](...serverParams); // Spread operator para passar argumentos dinâmicos
+        } 
+        else {
+             // 3. Se achou localmente (Client-Side)
+             $('#formModalLabel').text(`Editar ${config.label}`);
+             generateFormFields(record);
+             formModal.show();
+             showLoader(false);
+        }
+    } catch(e) {
+        isFormReadyForSubmit = true;
+        showToast('ERRO CRÍTICO ao abrir edição: ' + e.message, 'danger');
+        showLoader(false);
+    }
+}
+
+function validateForm() {
+    let isFormValid = true;
+    const form = document.getElementById('mainForm');
+    // Assegura que ENTITY_CONFIG[currentEntity] e formFieldsConfig existem antes de prosseguir
+    if (!ENTITY_CONFIG[currentEntity] || !ENTITY_CONFIG[currentEntity].formFieldsConfig) {
+        return true; // Se não há configuração de formulário, não há o que validar.
+    }
+    
+    let groups = ENTITY_CONFIG[currentEntity].formFieldsConfig;
+
+    if (groups.length > 0 && groups[0].name) {
+        groups = [{
+            fields: groups 
+        }];
+    }
+
+    groups.forEach(group => {
+        group.fields.forEach(fieldConfig => {
+            if (fieldConfig.validationRules && fieldConfig.validationRules.required) {
+                const inputElement = form.querySelector(`[name="${fieldConfig.name}"]`);
+                if (inputElement) { 
+                    const errorElement = inputElement.nextElementSibling;
+                    
+                    inputElement.classList.remove('is-invalid');
+                    if(errorElement && errorElement.classList.contains('invalid-feedback')) {
+                       errorElement.textContent = '';
+                    }
+
+                    // Validação inteligente: só verifica o campo se ele estiver VISÍVEL
+                    if ($(inputElement).is(':visible') && (!inputElement.value || inputElement.value.trim() === '')) {
+                        isFormValid = false;
+                        inputElement.classList.add('is-invalid');
+                        if(errorElement && errorElement.classList.contains('invalid-feedback')) {
+                            errorElement.textContent = 'Este campo é obrigatório.';
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    return isFormValid;
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+
+    if (!isFormReadyForSubmit) {
+        console.warn("Submissão bloqueada: inicialização do modal em progresso.");
+        return;
+    }
+    if (!validateForm()) {
+        showToast('Por favor, corrija os erros no formulário.', 'danger');
+        return;
+    }
+    
+    const submitButton = $(this).find('button[type="submit"]');
+    const originalText = submitButton.html();
+    
+    submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Salvando...');
+    showLoader(true, "Salvando dados..."); 
+
+    const config = ENTITY_CONFIG[currentEntity];
+    const sheetName = config.sheetName || currentEntity;
+    const formData = new FormData(e.target);
+    const recordObject = Object.fromEntries(formData.entries());
+
+    let formConfigGroups = config.formFieldsConfig || [];
+    if (formConfigGroups.length > 0 && formConfigGroups[0].name) {
+        formConfigGroups = [{ fields: formConfigGroups }];
+    }
+    formConfigGroups.forEach(group => {
+        group.fields.forEach(field => {
+            if (field.mask === 'money' && recordObject[field.name]) {
+                const valorComMascara = $(`#${field.name}`).val() || '0';
+                const valorSemPontos = valorComMascara.replace(/\./g, '');
+                const valorComPontoDecimal = valorSemPontos.replace(',', '.');
+                recordObject[field.name] = parseFloat(valorComPontoDecimal);
+            }
+        });
+    });
+
+    // === LÓGICA ESPECÍFICA PARA EQUIPAMENTOS (Versionamento e Imagem) ===
+    if (currentEntity === 'EQUIPAMENTOS') {
+        const equipObject = {};
+        const planoObject = {};
+        
+        Object.keys(recordObject).forEach(key => {
+            if (key.startsWith('prev_')) {
+                planoObject[key] = recordObject[key];
+            } else if (key !== 'planopreventivo_id' && key !== 'equipamento_imagem_file') {
+                equipObject[key] = recordObject[key];
+            }
+        });
+
+        const processSave = (fileData) => {
+            if (fileData) {
+                equipObject.imagem_upload = fileData; // Envia pro backend
+            }
+            
+            google.script.run
+                .withSuccessHandler(res => {
+                    submitButton.prop('disabled', false).html(originalText);
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        formModal.hide();
+                        
+                        try {
+                            if ($.fn.DataTable.isDataTable('#equipamentos-main-table-cad')) {
+                                $('#equipamentos-main-table-cad').DataTable().ajax.reload(null, false);
+                            } else if ($.fn.DataTable.isDataTable('#equipamentos-main-table')) {
+                                $('#equipamentos-main-table').DataTable().ajax.reload(null, false);
+                            }
+                        } catch(errTable) { }
+                        
+                    } else {
+                        showToast('Erro ao salvar: ' + res.error, 'danger');
+                    }
+                    showLoader(false);
+                })
+                .withFailureHandler(err => {
+                    submitButton.prop('disabled', false).html(originalText);
+                    handleServerError(err);
+                    showLoader(false);
+                })
+                .saveEquipamentoWithPlan(equipObject, planoObject);
+        };
+
+        // Lógica de Leitura do Arquivo Físico
+        const fileInput = document.getElementById('equipamento_imagem_file');
+        if (fileInput && fileInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                processSave({
+                    data: ev.target.result.split(',')[1],
+                    mimeType: fileInput.files[0].type,
+                    fileName: fileInput.files[0].name
+                });
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            processSave(null);
+        }
+        return; 
+    }
+
+    // === LÓGICA PADRÃO PARA OUTRAS ENTIDADES ===
+    const isEditing = !!recordObject[config.idField];
+    const serverFunction = isEditing ? 'updateRecord' : 'addRecord';
+    const args = [sheetName, recordObject, config.spreadsheetId, config.idField];
+
+    executeBackendWithRetry(
+        serverFunction, 
+        args,            
+        (response) => { 
+            submitButton.prop('disabled', false).html(originalText);
+            if (response.success) {
+                formModal.hide();
+                showToast('Registro salvo com sucesso!', 'success');
+                recordIdToHighlight = response.newId || response.updatedId;
+
+                if (currentEntity === 'OTICAS_INVENTORY') {
+                    if (typeof initOticasModule === 'function') initOticasModule('nav-oticas-inv-tab');
+                    showLoader(false);
+                    return;
+                }
+
+                // OTIMIZAÇÃO: Como todas as tabelas agora suportam AJAX nativo, recarregamos em segundo plano.
+                if (dataTable && typeof dataTable.ajax === 'object' && dataTable.ajax.reload) {
+                    dataTable.ajax.reload(null, false);
+                } else if (config.customRenderer && typeof window[config.customRenderer] === 'function') {
+                    window[config.customRenderer]();
+                } else {
+                    loadDataTable();
+                }
+            } else {
+                showToast('Erro ao salvar: ' + (response.error || 'Erro desconhecido.'), 'danger');
+                isFormReadyForSubmit = true;
+            }
+            showLoader(false);
+        },
+        (err) => { 
+            isFormReadyForSubmit = true;
+            handleServerError(err);
+            submitButton.prop('disabled', false).html(originalText);
+            showLoader(false);
+        }
+    );
+}
+
+function toggleStatus(id, isActive) {
+    const newStatus = isActive ? 'Inativo' : 'Ativo';
+    let baseMessage = `Tem certeza que deseja mudar o status deste item para "${newStatus}"?`;
+    const config = ENTITY_CONFIG[currentEntity];
+    const sheetName = config.sheetName || currentEntity;
+    if (isActive) {
+        showLoader(true);
+        google.script.run
+            .withSuccessHandler(response => {
+                showLoader(false);
+                if (response.error) {
+                    showToast('Erro ao verificar dependências: ' + response.error, 'danger');
+                    return;
+                }
+                let finalMessage = baseMessage;
+                if (response.hasDependencies) {
+                    finalMessage += `\n\n⚠️ ATENÇÃO: ${response.message}`;
+                }
+                showConfirm(finalMessage, function() {
+                    executeUpdateStatus(id, newStatus);
+                });
+            })
+            .withFailureHandler(err => {
+                showLoader(false);
+                showToast('Erro de comunicação ao verificar dependências: ' + err.message, 'danger');
+            })
+            .checkDependencies(sheetName, id);
+    } else {
+        showConfirm(baseMessage, function() {
+            executeUpdateStatus(id, newStatus);
+        });
+    }
+}
+
+function executeUpdateStatus(id, newStatus) {
+    showLoader(true);
+    const config = ENTITY_CONFIG[currentEntity];
+    const sheetName = config.sheetName || currentEntity;
+    google.script.run
+        .withSuccessHandler(response => {
+            if (response.success) {
+                loadDataTable(); 
+                showToast('Status alterado com sucesso!', 'success');
+            } else {
+                showToast('Erro ao atualizar status: ' + (response.error || 'Erro desconhecido.'), 'danger');
+                showLoader(false); 
+            }
+        })
+        .withFailureHandler(err => {
+            showToast('Erro de comunicação com o servidor: ' + err.message, 'danger');
+            showLoader(false);
+        })
+        .updateRecordStatus(sheetName, id, newStatus, config.spreadsheetId);
+}
+
+
+/**
+ * [V3 - SEGURA] Gera o HTML dinâmico para o modal de detalhes.
+ * CORREÇÃO GAP 7: Implementada sanitização de HTML (escapeHtml) em todos os valores.
+ */
+function generateDetailsView(data) {
+    console.log("--- DEBUG DETALHES ---");
+    // console.log("Dados Recebidos:", data); // Comentei para limpar o console
+
+    if (!data || !data.parent) {
+        $('#detailsModalBody').html('<div class="alert alert-warning">Nenhum dado retornado pelo servidor.</div>');
+        return;
+    }
+
+    const config = ENTITY_CONFIG[currentEntity];
+    const record = data.parent;
+    
+    if (Object.keys(record).length === 0) {
+         $('#detailsModalBody').html('<div class="alert alert-danger">O registro veio vazio do banco de dados.</div>');
+         return;
+    }
+
+    let html = '<div class="container-fluid">';
+
+    // --- 1. Card de Dados Principais ---
+    html += '<div class="card mb-3"><div class="card-header fw-bold bg-light">Dados do Registro</div><div class="card-body"><div class="row">';
+
+    // Mapeia Labels
+    const fieldMap = {};
+    if (config.formFieldsConfig) {
+        config.formFieldsConfig.forEach(group => {
+            const fields = group.fields ? group.fields : (Array.isArray(group) ? group : [group]); 
+            fields.forEach(f => { if(f.name) fieldMap[f.name] = f.label; });
+        });
+    }
+    if (config.columns) {
+        config.columns.forEach(c => { if(c.data && c.title) fieldMap[c.data] = c.title; });
+    }
+
+    let camposExibidos = 0;
+
+    for (const [key, value] of Object.entries(record)) {
+        if (key === 'search_vector' || key === 'rowIndex') continue;
+        
+        // Oculta IDs técnicos se houver nome correspondente
+        if (key.endsWith('_id') && key !== config.idField && !fieldMap[key]) {
+             const baseName = key.replace('_id', '');
+             if (record[baseName + '_nome'] || record[baseName + '_descricao']) continue;
+        }
+
+        camposExibidos++;
+        const label = fieldMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        let displayValue = value;
+
+        // Tratamento de valores
+        if (displayValue === null || displayValue === undefined || displayValue === '') {
+            displayValue = '<span class="text-muted fst-italic">Vazio</span>'; // HTML seguro fixo
+        } 
+        else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+           try { displayValue = new Date(value).toLocaleDateString('pt-BR'); } catch(e){ displayValue = escapeHtml(value); }
+        }
+        else {
+            // --- AQUI ESTÁ A PROTEÇÃO ---
+            // Se não for um valor vazio ou data formatada, escapamos o HTML
+            displayValue = escapeHtml(value);
+        }
+
+        html += `
+            <div class="col-md-6 mb-3 border-bottom pb-2">
+                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">${escapeHtml(label)}</small>
+                <span class="text-dark" style="font-size: 0.95rem;">${displayValue}</span>
+            </div>`;
+    }
+    
+    if (camposExibidos === 0) {
+        html += '<div class="col-12 text-muted">Nenhum campo visível para exibir.</div>';
+    }
+
+    html += '</div></div></div>';
+
+    // --- 2. Itens Relacionados ---
+    if (data.children) {
+        for (const [childName, items] of Object.entries(data.children)) {
+            if (items && items.length > 0) {
+                html += `<div class="card mb-3 border-info"><div class="card-header fw-bold text-info bg-light">${escapeHtml(childName)} Associados</div><ul class="list-group list-group-flush">`;
+                items.forEach(item => {
+                    const desc = item.description || item.descricao || item.nome || Object.values(item)[1] || 'Item';
+                    // Sanitiza a descrição do filho também
+                    html += `<li class="list-group-item">${escapeHtml(desc)} <small class="text-muted">(ID: ${escapeHtml(item.id)})</small></li>`;
+                });
+                html += '</ul></div>';
+            }
+        }
+    }
+
+    // --- 3. Histórico ---
+    if (data.history && data.history.length > 0) {
+         html += `<div class="card mb-3 border-warning"><div class="card-header fw-bold text-warning bg-light">Histórico Recente</div><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Data</th><th>Tipo</th><th>Ocorrência</th><th>Status</th></tr></thead><tbody>`;
+         data.history.forEach(h => {
+             html += `<tr>
+                <td>${h.date ? new Date(h.date).toLocaleDateString('pt-BR') : '-'}</td>
+                <td>${escapeHtml(h.type || '-')}</td>
+                <td>${escapeHtml(h.description || '-')}</td>
+                <td><span class="badge bg-secondary">${escapeHtml(h.status || '-')}</span></td>
+             </tr>`;
+         });
+         html += `</tbody></table></div></div>`;
+    }
+
+    html += '</div>';
+    $('#detailsModalBody').html(html);
+}
+
+function openDetailsModal(id) {
+    showLoader(true);
+    const config = ENTITY_CONFIG[currentEntity];
+    google.script.run
+        .withSuccessHandler(response => {
+            showLoader(false);
+            if (response.error) {
+                showToast('Erro ao buscar detalhes: ' + response.error, 'danger');
+                return;
+            }
+            
+            // VERIFICA SE EXISTE UM RENDERIZADOR CUSTOMIZADO DE DETALHES
+            if (config.customDetailsFunction && typeof window[config.customDetailsFunction] === 'function') {
+                window[config.customDetailsFunction](response);
+            } else {
+                generateDetailsView(response); // Fallback padrão
+            }
+            
+            detailsModal.show();
+        })
+        .withFailureHandler(err => {
+            handleServerError(err);
+        })
+        .getRecordWithDetails(config.sheetName || currentEntity, id, config.spreadsheetId);
+}
+
+// --- FUNÇÕES DE EVENTOS ESPECÍFICOS ---
+$(document).on('dblclick', '#detailsModalBody .history-row', function() {
+    const osId = $(this).data('os-id');
+    const osType = $(this).data('os-type');
+    if (!osId || !osType) {
+        console.error("Não foi possível encontrar o ID ou o tipo da OS na linha clicada.");
+        return;
+    }
+    detailsModal.hide();
+    setTimeout(() => {
+        if (osType === 'Corretiva') {
+            openCorretivaModal(osId);
+        } else if (osType === 'Preventiva') {
+            openPreventivaModal(osId);
+        }
+    }, 500);
+});
+
+
+
+/**
+ * Esta função deve ser chamada APÓS todos os outros scripts de módulos terem sido carregados.
+ * Ela configura o listener de clique para o botão "Adicionar Novo", garantindo que o functionRegistry já esteja populado.
+ */
+function initializeClickHandlers() {
+    $('#addNewBtn').on('click', function() {
+        if (!currentEntity) return;
+        const config = ENTITY_CONFIG[currentEntity];
+        if (!config) return;
+
+        // Decide qual função chamar com base na configuração da entidade atual
+        if (config.customModalFunction && typeof functionRegistry[config.customModalFunction] === 'function') {
+            functionRegistry[config.customModalFunction](); // Chama a função customizada pelo registro
+        } else {
+            openFormModalForAdd(); // Chama a função padrão
+        }
+    });
+}
+
+// --- FUNÇÕES DO MODAL DE INPUT (PROMPT) ---
+
+let inputPromptCallback = null; // Armazena o callback
+
+/**
+ * Exibe um modal de prompt (Input) com correção de Z-Index para Modais Aninhados.
+ * Move o elemento para o final do body para garantir sobreposição visual.
+ */
+function showInputPrompt(title, message, inputLabel, callback, inputType = 'text') {
+    // 1. Configura os Textos e Inputs
+    $('#inputPromptModalLabel').text(title);
+    $('#inputPromptModalMessage').html(message.replace(/\n/g, '<br>'));
+    $('#inputPromptModalInputLabel').text(inputLabel);
+    
+    const textInput = $('#inputPromptModalInput');
+    const numContainer = $('#inputPromptModalNumberContainer');
+    const numInput = $('#inputPromptModalNumber');
+
+    textInput.val('');
+    numInput.val('');
+    
+    $('#formInputPrompt').data('inputType', inputType);
+
+    if (inputType === 'number') {
+        textInput.hide().prop('required', false);
+        numContainer.show();
+        numInput.prop('required', true);
+    } else {
+        numContainer.hide().prop('required', false);
+        textInput.show().prop('required', true);
+    }
+    
+    inputPromptCallback = callback;
+    
+    const modalEl = $('#inputPromptModal');
+
+    // --- CORREÇÃO DEFINITIVA DE MODAL ANINHADO ---
+
+    // 1. Move fisicamente o modal para o final do body. 
+    // Isso garante que ele esteja "por último" na ordem de pintura do navegador.
+    modalEl.appendTo('body');
+
+    // 2. Aplica classe de Z-Index altíssimo no próprio modal
+    modalEl.addClass('z-index-top-modal');
+
+    // 3. Inicializa e Mostra
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl[0]);
+    modalInstance.show();
+
+    // 4. Ajusta o Backdrop (Fundo escuro)
+    // O Bootstrap cria o backdrop logo após o método .show().
+    // Precisamos encontrar o *último* backdrop criado e aplicar o z-index nele.
+    setTimeout(() => {
+        // Pega todos os backdrops visíveis
+        const backdrops = $('.modal-backdrop');
+        
+        if (backdrops.length > 1) {
+            // Se houver mais de um (o do modal pai + o novo), pega o último
+            const lastBackdrop = backdrops.last();
+            lastBackdrop.addClass('z-index-top-backdrop');
+            lastBackdrop.css('opacity', '0.5'); // Garante visual
+        } else if (backdrops.length === 1) {
+             // Caso raro onde o pai perdeu o backdrop, aplica neste
+             backdrops.addClass('z-index-top-backdrop');
+        }
+
+        // Foco no input correto
+        if (inputType === 'number') numInput.focus();
+        else textInput.focus();
+        
+    }, 150); // Delay curto para garantir que o Bootstrap inseriu o backdrop no DOM
+}
+
+/**
+ * Handler para o submit do prompt.
+ * ATUALIZADO: Pega o valor do campo correto (texto ou número).
+ */
+function handleInputPromptSubmit(e) {
+    e.preventDefault();
+    
+    const type = $('#formInputPrompt').data('inputType');
+    let inputValue;
+
+    if (type === 'number') {
+        inputValue = $('#inputPromptModalNumber').val();
+    } else {
+        inputValue = $('#inputPromptModalInput').val().trim();
+    }
+    
+    if (inputValue !== '' && inputValue !== null) {
+        if (typeof inputPromptCallback === 'function') {
+            inputPromptCallback(inputValue);
+        }
+        inputPromptModal.hide();
+        inputPromptCallback = null;
+    } else {
+        showToast("Por favor, preencha o campo.", "danger");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+</script>
