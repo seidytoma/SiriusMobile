@@ -1,17 +1,26 @@
 ﻿// app/chamados/[id].tsx
 
-import React, { useEffect, useState, useRef } from 'react';
-import { 
-  StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, 
-  Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, FlatList 
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SiriusApi } from '../../../src/services/SiriusApi';
-import { stopRinging } from '../../../src/services/ChamadosLogic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet, Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/context/AuthContext';
+import { stopRinging } from '../../../src/services/ChamadosLogic';
+import { SiriusApi } from '../../../src/services/SiriusApi';
 
 const COLORS = { 
   primary: '#003366', 
@@ -41,6 +50,11 @@ export default function ChamadoDetalhes() {
 
   const [activeTab, setActiveTab] = useState('detalhes');
   const [timer, setTimer] = useState("00:00:00");
+
+  // Modal de Ações Extras (Recusar, Apoio, Transferir)
+  const [actionMenuVisible, setActionMenuVisible] = useState(false);
+  const [extraAction, setExtraAction] = useState<'Recusar' | 'Apoio' | 'Transferir' | null>(null);
+  const [actionReason, setActionReason] = useState("");
 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -295,7 +309,7 @@ export default function ChamadoDetalhes() {
     }
 
     if (!chamado?.chamado_id || processingAction) return;
-
+    
     // 1. PARA O BARULHO IMEDIATAMENTE
     stopRinging(chamado.chamado_id);
 
@@ -390,6 +404,41 @@ export default function ChamadoDetalhes() {
     }
   };
 
+  const handleExtraAction = async () => {
+    if (!actionReason.trim()) return Alert.alert("Atenção", "Por favor, informe o motivo/observação.");
+    
+    setProcessingAction(true);
+    setActionMenuVisible(false);
+
+    try {
+      let res;
+      const payload = {
+        chamado_id: chamado.chamado_id,
+        motivo: actionReason,
+        tecnico_nome: user?.name,
+        tecnico_email: user?.email
+      };
+
+      if (extraAction === 'Recusar') {
+        res = await SiriusApi.recusarChamado(payload);
+      } else if (extraAction === 'Apoio') {
+        res = await SiriusApi.iniciarApoioTecnico(payload);
+      } else if (extraAction === 'Transferir') {
+        res = await SiriusApi.transferirChamado(payload);
+      }
+
+      if (res?.success) {
+        Alert.alert("Sucesso", "Ação registrada com sucesso!", [{ text: "OK", onPress: () => router.back() }]);
+      } else {
+        Alert.alert("Erro", res?.error || "Ação recusada pelo servidor.");
+      }
+    } catch (e) {
+      Alert.alert("Erro", "Falha de conexão com o servidor.");
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
   if (loading) return <View style={[styles.center, {backgroundColor: COLORS.background}]}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
   if (loading) return <View style={[styles.center, {backgroundColor: COLORS.background}]}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
   
@@ -417,7 +466,13 @@ export default function ChamadoDetalhes() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={{top:15, bottom:15, left:15, right:15}}>
           <MaterialIcons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Detalhes do Chamado</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>OS {chamado?.chamado_numero || 'Detalhes'}</Text>
+        {/* BOTÃO DE AÇÕES EXTRAS NO CABEÇALHO */}
+        {chamado?.chamado_status !== 'Fechado' && (
+          <TouchableOpacity onPress={() => setActionMenuVisible(true)} hitSlop={{top:15, bottom:15, left:15, right:15}}>
+            <MaterialIcons name="more-vert" size={28} color="white" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.tabContainer}>
@@ -545,8 +600,8 @@ export default function ChamadoDetalhes() {
             }}
             disabled={processingAction} // Não desabilita se isButtonLocked, para permitir clicar e ver o alerta
           >
-            {/*
-                UX OTIMIZADA: Se estiver processando, mas o status JÁ mudou (Otimista),
+            {/* 
+                UX OTIMIZADA: Se estiver processando, mas o status JÁ mudou (Otimista), 
                 mostra o botão normal (apenas travado) em vez do Spinner.
                 Isso dá a sensação de "Instantâneo".
             */}
@@ -609,6 +664,55 @@ export default function ChamadoDetalhes() {
           </View>
         </View>
       </Modal>
+
+      {/* MODAL DE MENU DE AÇÕES EXTRAS */}
+      <Modal visible={actionMenuVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {!extraAction ? (
+              <>
+                <Text style={styles.modalTitle}>Opções do Chamado</Text>
+                {chamado?.chamado_status === 'Aberto' && (
+                  <TouchableOpacity style={styles.actionMenuBtn} onPress={() => setExtraAction('Recusar')}>
+                    <MaterialIcons name="block" size={24} color={COLORS.danger} />
+                    <Text style={[styles.actionMenuText, {color: COLORS.danger}]}>Recusar Chamado</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.actionMenuBtn} onPress={() => setExtraAction('Transferir')}>
+                  <MaterialIcons name="swap-horiz" size={24} color={COLORS.primary} />
+                  <Text style={styles.actionMenuText}>Transferir / Repassar</Text>
+                </TouchableOpacity>
+                {chamado?.chamado_status === 'Em Atendimento' && (
+                  <TouchableOpacity style={styles.actionMenuBtn} onPress={() => setExtraAction('Apoio')}>
+                    <MaterialIcons name="group-add" size={24} color={COLORS.warning} />
+                    <Text style={[styles.actionMenuText, {color: COLORS.warning}]}>Solicitar Apoio Técnico</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={[styles.actionMenuBtn, {borderBottomWidth: 0, justifyContent: 'center'}]} onPress={() => setActionMenuVisible(false)}>
+                  <Text style={{color: COLORS.subtext, fontWeight: 'bold'}}>Cancelar</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>{extraAction === 'Apoio' ? 'Solicitar Apoio' : extraAction}</Text>
+                <Text style={{color: COLORS.subtext, marginBottom: 10, fontSize: 13}}>
+                  {extraAction === 'Transferir' ? 'Informe para qual setor ou o motivo do repasse:' : 'Informe o motivo detalhado:'}
+                </Text>
+                <TextInput 
+                  style={styles.input} multiline value={actionReason} onChangeText={setActionReason} 
+                  placeholder="Digite aqui..." 
+                />
+                <TouchableOpacity style={[styles.btnModalConfirm, {backgroundColor: extraAction === 'Recusar' ? COLORS.danger : COLORS.primary}]} onPress={handleExtraAction}>
+                  <Text style={{color: 'white', fontWeight: 'bold'}}>CONFIRMAR AÇÃO</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={{alignItems: 'center', marginTop: 15}} onPress={() => { setExtraAction(null); setActionReason(""); }}>
+                  <Text style={{color: COLORS.subtext}}>Voltar</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -634,7 +738,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
   header: { backgroundColor: COLORS.primary, paddingTop: 50, paddingBottom: 15, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { color: 'white', fontSize: 20, fontWeight: 'bold', marginLeft: 15 },
+  headerTitle: { color: 'white', fontSize: 20, fontWeight: 'bold', marginLeft: 15, flex: 1 },
   tabContainer: { flexDirection: 'row', backgroundColor: COLORS.primary },
   tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 4, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: '#FFF' },
@@ -671,5 +775,7 @@ const styles = StyleSheet.create({
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 15 },
   optionChip: { padding: 10, borderRadius: 20, backgroundColor: '#F0F0F0' },
   optionSelected: { backgroundColor: COLORS.primary },
-  btnModalConfirm: { backgroundColor: COLORS.success, padding: 15, borderRadius: 12, alignItems: 'center' }
+  btnModalConfirm: { backgroundColor: COLORS.success, padding: 15, borderRadius: 12, alignItems: 'center' },
+  actionMenuBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+  actionMenuText: { fontSize: 16, fontWeight: 'bold', marginLeft: 15, color: COLORS.text }
 });
