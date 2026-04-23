@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import * as Notifications from 'expo-notifications';
 
 // 1. O RootLayout APENAS fornece o Provider. 
-// Ele NÃO pode usar o useAuth, pois ele "cria" o auth.
+// Ele Nï¿½O pode usar o useAuth, pois ele "cria" o auth.
 export default function RootLayout() {
   return (
     <AuthProvider>
@@ -14,27 +14,27 @@ export default function RootLayout() {
   );
 }
 
-// 2. Este componente interno JÁ ESTÁ dentro do Provider, então pode usar useAuth.
+// 2. Este componente interno Jï¿½ ESTï¿½ dentro do Provider, entï¿½o pode usar useAuth.
 function InitialLayout() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
-  // --- LISTENER DE NOTIFICAÇÕES (Ouvido Global) ---
+  // --- LISTENER DE NOTIFICAï¿½ï¿½ES (Ouvido Global) ---
   useEffect(() => {
-    // Escuta cliques na notificação ou nos botões de ação dela
+    // Escuta cliques na notificaï¿½ï¿½o ou nos botï¿½es de aï¿½ï¿½o dela
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const actionId = response.actionIdentifier;
       const data = response.notification.request.content.data;
       
-      // Se a notificação tem um ID de chamado vinculado
+      // Se a notificaï¿½ï¿½o tem um ID de chamado vinculado
       if (data?.chamado_id) {
         
-        // Verifica se o clique foi especificamente no botão "ATENDER"
+        // Verifica se o clique foi especificamente no botï¿½o "ATENDER"
         // (Definido no NotificationService.js como 'ATENDER')
         const shouldAutoStart = actionId === 'ATENDER';
 
-        console.log(`[Notification] Ação: ${actionId}, AutoStart: ${shouldAutoStart}`);
+        console.log(`[Notification] Aï¿½ï¿½o: ${actionId}, AutoStart: ${shouldAutoStart}`);
 
         // Navega diretamente para a tela de detalhes
         router.push({
@@ -43,7 +43,7 @@ function InitialLayout() {
             id: data.chamado_id, 
             // Passamos o dado completo (JSON string) se tiver, para agilizar a UI (Optimistic)
             data: data.chamado_data ? data.chamado_data : undefined,
-            // Flag mágica que o [id].tsx vai ler para rodar o handleAtender() sozinho
+            // Flag mï¿½gica que o [id].tsx vai ler para rodar o handleAtender() sozinho
             autoStart: shouldAutoStart ? 'true' : 'false' 
           }
         });
@@ -53,18 +53,18 @@ function InitialLayout() {
     return () => subscription.remove();
   }, []);
 
-  // --- PROTEÇÃO DE ROTAS (Auth Guard) ---
+  // --- PROTEï¿½ï¿½O DE ROTAS (Auth Guard) ---
   useEffect(() => {
     if (isLoading) return;
 
-    // Verifica se está tentando acessar as abas (área logada)
+    // Verifica se estï¿½ tentando acessar as abas (ï¿½rea logada)
     const inAuthGroup = segments[0] === '(tabs)';
 
     if (!user && inAuthGroup) {
-      // Se não tem usuário e tenta entrar no app, manda pro login
+      // Se nï¿½o tem usuï¿½rio e tenta entrar no app, manda pro login
       router.replace('/login');
     } else if (user && !inAuthGroup) {
-      // Se já tem usuário e está no login, manda pra home
+      // Se jï¿½ tem usuï¿½rio e estï¿½ no login, manda pra home
       router.replace('/(tabs)');
     }
   }, [user, segments, isLoading]);
