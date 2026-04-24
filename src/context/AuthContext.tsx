@@ -1,12 +1,12 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Alert } from 'react-native'; 
 import * as SecureStore from 'expo-secure-store';
-import * as BackgroundFetch from 'expo-background-fetch'; // <--- NOVO
-import * as TaskManager from 'expo-task-manager';       // <--- NOVO
+import * as BackgroundFetch from 'expo-background-fetch'; 
+import * as TaskManager from 'expo-task-manager';       
+import { useRouter, useSegments } from 'expo-router';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { SiriusApi } from '../services/SiriusApi';
 import { registerForPushNotificationsAsync } from '../services/NotificationService';
-
-
 
 const USER_STORAGE_KEY = 'Sirius_user_data_v1';
 const TASK_NAME = 'BACKGROUND_CHAMADOS_MONITOR';
@@ -25,9 +25,32 @@ export function AuthProvider({ children }: any) {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const router = useRouter();
+  const segments = useSegments();
+
+  // 1. Configuração do Google Sign-In e Carga Inicial
   useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '269517653130-co21qc89mu9ssmi19l8qb5o26nh30esn.apps.googleusercontent.com',
+      offlineAccess: true,
+    });
     loadStorageData();
   }, []);
+
+  // 2. Proteção de Rotas e Redirecionamento Automático
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(tabs)';
+
+    if (!user && inAuthGroup) {
+      // Se não há usuário e tenta entrar nas abas, vai para login
+      router.replace('/login');
+    } else if (user && !inAuthGroup) {
+      // Se já está logado e está fora das abas, vai para a Home
+      router.replace('/(tabs)');
+    }
+  }, [user, isLoading, segments]);
 
   async function loadStorageData() {
     try {
@@ -69,33 +92,32 @@ export function AuthProvider({ children }: any) {
     }
 
     try {
-      // 1. Gera o Token (Silenciosamente)
-      // Se falhar ou vier nulo, o app continua funcionando, apenas sem push.
       const pushToken = await registerForPushNotificationsAsync();
       
-      // 2. Faz o login enviando o token junto
-      const response = await SiriusApi.login(email, pushToken);
+      // Captura os tokens atuais do Google
+      const tokens = await GoogleSignin.getTokens();
+      const accessToken = tokens.accessToken;
+
+      // Envia o e-mail e o accessToken para o GAS
+      const response = await SiriusApi.login(email, pushToken, accessToken);
 
       if (response?.success) {
         const userData = {
           ...response.user,
-          photoUrl: googleUser.picture,
+          photoUrl: googleUser.picture || googleUser.photo,
         };
 
         setUser(userData);
         await SecureStore.setItemAsync(USER_STORAGE_KEY, JSON.stringify(userData));
 
-        // 3. SEGURANÇA EXTRA (Garante que salvou na planilha nos bastidores)
-        if (pushToken && userData.id) {
-            SiriusApi.savePushToken(userData.id, pushToken).catch(() => {
-              // Falha silenciosa: não precisa assustar o usuário se isso falhar
-            });
+        if (pushToken && userData.usuario_id) {
+            SiriusApi.savePushToken(userData.usuario_id, pushToken).catch(() => {});
         }
 
         return { success: true };
       }
 
-      return { success: false, error: 'E-mail não cadastrado no Sirius' };
+      return { success: false, error: response?.error || 'E-mail não cadastrado no Sirius' };
 
     } catch (error: any) {
       console.log("Erro Login:", error);
@@ -104,27 +126,23 @@ export function AuthProvider({ children }: any) {
     }
   }
 
-  // === SIGNOUT ROBUSTO (CORRIGIDO) ===
+  // === SIGNOUT ROBUSTO ===
   async function signOut() {
-    setIsLoading(true); // Bloqueia a UI durante o processo
+    setIsLoading(true);
     try {
-      // 1. Limpa o Token no Backend (Para as notificações)
-      if (user && user.id) {
+      // 1. Limpa o Token no Backend
+      if (user && user.usuario_id) {
         try {
-           await SiriusApi.removePushToken(user.id);
-           console.log("✅ Token removido do servidor.");
-        } catch (e) {
-           console.log("⚠️ Falha ao remover token do servidor (sem internet?), ignorando...");
-        }
+           await SiriusApi.removePushToken(user.usuario_id);
+        } catch (e) {}
       }
 
-      // 2. Limpa o Auth Nativo do Google (CORRIGE O LOOP NO LOGIN)
+      // 2. Limpa o Auth Nativo do Google
       try {
         const isSignedIn = await GoogleSignin.isSignedIn();
         if (isSignedIn) {
-          await GoogleSignin.revokeAccess(); // Remove permissão (garante popup de escolha)
-          await GoogleSignin.signOut();      // Desloga da sessão nativa
-          console.log("✅ Google SignOut nativo realizado.");
+          await GoogleSignin.revokeAccess();
+          await GoogleSignin.signOut();
         }
       } catch (e) {
         console.log("⚠️ Erro no Google SignOut nativo:", e);
@@ -141,12 +159,12 @@ export function AuthProvider({ children }: any) {
       // 4. Limpa dados locais
       await SecureStore.deleteItemAsync(USER_STORAGE_KEY);
       
-      // 5. Reseta estado visual (FINALMENTE)
+      // 5. Reseta estado
       setUser(null);
 
     } catch (error) {
       console.log("Erro crítico ao sair:", error);
-      setUser(null); // Força saída mesmo com erro
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
