@@ -8,41 +8,48 @@ const API_URL = 'https://script.google.com/a/macros/hsl.org.br/s/AKfycbwDokXchAY
  * Substitui todos os 'fetch' repetitivos.
  * Gerencia Timeout (15s), Erros de Rede e JSON inv�lido.
  */
-async function apiRequest(payload, timeout = 15000) {
+async function apiRequest(payload, timeout = 15000, token = null) {
   try {
-    // 1. Cria um contador de tempo (AbortController) para n�o travar o app
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
 
-    // 2. Faz a chamada
+    const headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Header padr�o do GAS
+      headers: headers,
       body: JSON.stringify(payload),
-      signal: controller.signal // Liga o cron�metro
+      signal: controller.signal
     });
 
-    clearTimeout(id); // Para o cron�metro se deu certo
+    clearTimeout(id);
 
-    if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+    // NOVO: Parar de mascarar o erro HTTP
+    if (!response.ok) {
+      throw new Error(`Erro ${response.status}: Servidor recusou a conexão.`);
+    }
 
-    // 3. Trata a resposta (blindagem contra erro HTML do Google)
     const text = await response.text();
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.warn("[API] Resposta n�o-JSON (Erro interno do Google):", text.substring(0, 50));
-      return { success: false, error: "Servidor inst�vel. Tente novamente." };
+      return { success: false, error: "Servidor instável. Tente novamente." };
     }
 
   } catch (error) {
-    // 4. Tratamento de erros espec�ficos
+    // NOVO: Mostra o erro real se for um bloqueio do Google
+    if (error.message.includes("Servidor recusou")) {
+      console.warn("[API] Bloqueio do Google:", error.message);
+      return { success: false, error: error.message }; 
+    }
+
     if (error.name === 'AbortError') {
-      console.warn("[API] Timeout: A internet est� muito lenta.");
       return { success: false, error: "Tempo limite excedido." };
     }
-    console.warn("[API] Erro de Conex�o:", error.message);
-    return { success: false, error: "Sem conex�o com a internet." };
+    return { success: false, error: "Sem conexão com a internet." };
   }
 }
 
@@ -59,12 +66,12 @@ export const SiriusApi = {
     });
   },
 
-  async login(email, pushToken) {
+  async login(email, pushToken, accessToken) {
     return await apiRequest({
       action: 'login',
-      email: email,
+      email: email.trim().toLowerCase(),
       pushToken: pushToken || ''
-    });
+    }, 15000, accessToken);
   },
 
 
